@@ -26,11 +26,13 @@ function purchaseSuccessEmbed(order, product) {
     );
   }
 
+  // Only add ticket/support button if Discord server invite is set
+  const supportUrl = process.env.DISCORD_SERVER_INVITE || process.env.BASE_URL;
   buttons.push(
     new ButtonBuilder()
       .setLabel("🎫 Open Ticket")
       .setStyle(ButtonStyle.Link)
-      .setURL(`${process.env.BASE_URL}`)
+      .setURL(supportUrl)
   );
 
   const row = new ActionRowBuilder().addComponents(buttons);

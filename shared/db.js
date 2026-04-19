@@ -2,7 +2,10 @@ const Database = require("better-sqlite3");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, "../nexuskeys.db");
+// Use /data directory on Railway (persistent volume) or local fallback
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || process.env.DB_DIR || path.join(__dirname, "..");
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, "nexuskeys.db");
+console.log("DB path:", DB_PATH);
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");

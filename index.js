@@ -1,14 +1,12 @@
 require("dotenv").config();
-
-console.log("╔══════════════════════════════════╗");
-console.log("║     NexusKeys Platform v1.0      ║");
-console.log("╚══════════════════════════════════╝");
-
-// Auto-deploy slash commands on every start
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const fs = require("fs");
 const path = require("path");
+
+console.log("╔══════════════════════════════════╗");
+console.log("║     NexusKeys Platform v1.0      ║");
+console.log("╚══════════════════════════════════╝");
 
 async function deployCommands() {
   try {
@@ -33,11 +31,5 @@ async function deployCommands() {
 }
 
 deployCommands();
-
-// Start bot
 require("./bot/bot");
-
-// Start API after bot connects
-setTimeout(() => {
-  require("./api/server");
-}, 2000);
+setTimeout(() => { require("./api/server"); }, 2000);
