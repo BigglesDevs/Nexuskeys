@@ -1,10 +1,11 @@
-const { Tickets } = require("../utils/db");
-const { ticketCloseEmbed } = require("../utils/embeds");
+// events/interactionCreate.js — slash command router only
+// Ticket panel interactions handled in ticketHandler.js
 
 module.exports = {
   name: "interactionCreate",
   once: false,
   async execute(interaction, client) {
+    // Autocomplete
     if (interaction.isAutocomplete()) {
       const command = client.commands.get(interaction.commandName);
       if (command?.autocomplete) {
@@ -13,22 +14,12 @@ module.exports = {
       return;
     }
 
-    if (interaction.isButton() && interaction.customId === "close_ticket") {
-      const ticket = Tickets.getByChannel(interaction.channelId);
-      if (!ticket) return interaction.reply({ content: "No ticket found.", ephemeral: true });
-      const isOwner = ticket.discord_id === interaction.user.id;
-      const isAdmin = interaction.user.id === process.env.ADMIN_DISCORD_ID ||
-        interaction.memberPermissions?.has("Administrator");
-      if (!isOwner && !isAdmin) return interaction.reply({ content: "Only the ticket owner or admin can close this.", ephemeral: true });
-      Tickets.close(ticket.id);
-      await interaction.reply({ embeds: [ticketCloseEmbed(ticket)] });
-      setTimeout(async () => { try { await interaction.channel.delete(); } catch (_) {} }, 5000);
-      return;
-    }
-
+    // Slash commands only — buttons/modals/selects handled by ticketHandler.js
     if (!interaction.isChatInputCommand()) return;
+
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
+
     try {
       await command.execute(interaction);
     } catch (err) {
