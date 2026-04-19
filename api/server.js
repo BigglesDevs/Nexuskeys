@@ -851,39 +851,107 @@ const SUCCESS_HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Order Confirmed — NexusKeys</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#080b14;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap');
-.card{background:#0d1120;border:1px solid #1e2a3a;border-radius:18px;padding:44px 36px;text-align:center;max-width:460px;width:90%;animation:su .3s ease}
-@keyframes su{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.check{width:68px;height:68px;background:#22c55e18;border:2px solid #22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px}
-h1{font-size:24px;font-weight:700;margin-bottom:8px}
-p{color:#64748b;font-size:14px;line-height:1.6;margin-bottom:22px}
-.info{background:#080b14;border:1px solid #1e2a3a;border-radius:10px;padding:14px 16px;margin-bottom:22px;text-align:left}
-.info-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
-.info-label{color:#64748b}
-.info-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px}
-.btn{display:inline-block;padding:11px 22px;border-radius:9px;background:#6366f1;color:#fff;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;border:none;font-family:inherit}
-.btn:hover{background:#818cf8}
+body{background:#0f1117;color:#e2e8f0;font-family:'Outfit',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 0%,#22c55e08,transparent 70%);pointer-events:none}
+.card{background:#13161e;border:1px solid #252836;border-radius:20px;padding:40px 36px;text-align:center;max-width:500px;width:100%;position:relative;z-index:1;animation:up .3s ease}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.check{width:70px;height:70px;background:#22c55e15;border:2px solid #22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px;animation:pop .4s .1s both}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+h1{font-size:26px;font-weight:700;margin-bottom:8px}
+.sub{color:#64748b;font-size:14px;line-height:1.6;margin-bottom:28px}
+.order-box{background:#0f1117;border:1px solid #252836;border-radius:12px;padding:18px;margin-bottom:20px;text-align:left}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #1a1d27;font-size:13px}
+.row:last-child{border-bottom:none}
+.row-label{color:#64748b}
+.row-val{font-weight:600;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:12px}
+.row-val.green{color:#22c55e}
+.key-section{margin-bottom:20px;text-align:left}
+.key-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.key-box{background:#0f1117;border:1px dashed #2e3348;border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:14px;color:#818cf8;word-break:break-all;line-height:1.5;position:relative}
+.copy-btn{position:absolute;top:10px;right:10px;background:#1a1d27;border:1px solid #252836;color:#94a3b8;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s}
+.copy-btn:hover{background:#252836;color:#e2e8f0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;padding:11px 16px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Outfit',sans-serif;transition:all .15s}
+.btn-primary{background:#6366f1;color:#fff}
+.btn-primary:hover{background:#818cf8}
+.btn-ghost{background:#1a1d27;color:#94a3b8;border:1px solid #252836}
+.btn-ghost:hover{color:#e2e8f0}
+.loading{color:#64748b;font-size:14px;padding:20px 0}
+.spin{width:32px;height:32px;border:3px solid #252836;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.discord-note{font-size:12px;color:#475569;margin-top:16px;line-height:1.5}
 </style>
 </head>
 <body>
 <div class="card">
   <div class="check">✓</div>
   <h1>Payment Confirmed!</h1>
-  <p>Your license key has been sent to your <strong style="color:#e2e8f0">Discord DMs</strong> and is in your order history.</p>
-  <div class="info">
-    <div class="info-row"><span class="info-label">Status</span><span class="info-val" style="color:#22c55e">✓ COMPLETED</span></div>
-    <div class="info-row"><span class="info-label">Delivery</span><span class="info-val">Discord DMs + Dashboard</span></div>
-    <div class="info-row"><span class="info-label">Payment</span><span class="info-val">Stripe Secured</span></div>
+  <p class="sub">Your order is complete. Your key is shown below and has also been sent to your <strong style="color:#e2e8f0">Discord DMs</strong>.</p>
+
+  <div id="orderContent">
+    <div class="loading"><div class="spin"></div>Loading your order…</div>
   </div>
-  <button class="btn" onclick="window.location.href='/'">Back to Store</button>
-  <div style="margin-top:14px;font-size:12px;color:#64748b">Need help? Open a /ticket in our Discord server.</div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="window.location.href='/'">Back to Store</button>
+    <button class="btn btn-ghost" onclick="window.location.href='/'" id="ordersBtn">My Orders</button>
+  </div>
+  <div class="discord-note">Key also sent to your Discord DMs. Need help? Join our Discord server.</div>
 </div>
+
+<script>
+var sessionId = new URLSearchParams(window.location.search).get("session_id");
+
+function renderOrder(order) {
+  var html = '';
+  html += '<div class="key-section">';
+  html += '<div class="key-label">🔑 Your License Key</div>';
+  html += '<div class="key-box" id="keyBox">' + (order.key_value || 'Key will be in your Discord DMs') + '<button class="copy-btn" onclick="copyKey()">Copy</button></div>';
+  html += '</div>';
+  html += '<div class="order-box">';
+  html += '<div class="row"><span class="row-label">Order ID</span><span class="row-val">' + order.id + '</span></div>';
+  html += '<div class="row"><span class="row-label">Product</span><span class="row-val">' + order.product_name + (order.variant_name ? ' — ' + order.variant_name : '') + '</span></div>';
+  html += '<div class="row"><span class="row-label">Amount Paid</span><span class="row-val">$' + Number(order.amount).toFixed(2) + '</span></div>';
+  html += '<div class="row"><span class="row-label">Status</span><span class="row-val green">✓ COMPLETED</span></div>';
+  html += '<div class="row"><span class="row-label">Date</span><span class="row-val">' + new Date(order.created_at).toLocaleString() + '</span></div>';
+  html += '</div>';
+  document.getElementById("orderContent").innerHTML = html;
+}
+
+function copyKey() {
+  var box = document.getElementById("keyBox");
+  var key = box.textContent.replace("Copy","").trim();
+  navigator.clipboard.writeText(key).then(function() {
+    var btn = box.querySelector(".copy-btn");
+    btn.textContent = "Copied!";
+    btn.style.color = "#22c55e";
+    setTimeout(function() { btn.textContent = "Copy"; btn.style.color = ""; }, 2000);
+  });
+}
+
+// Fetch the order
+if (sessionId) {
+  fetch("/api/order/by-session?session_id=" + encodeURIComponent(sessionId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ ' + data.error + ' — check your Discord DMs for your key.</div>';
+      } else {
+        renderOrder(data);
+      }
+    })
+    .catch(function() {
+      document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ Could not load order — check your Discord DMs for your key.</div>';
+    });
+} else {
+  document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ No session found.</div>';
+}
+</script>
 </body>
-</html>
-`;
+</html>`;
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
 const requireAuth = (req, res, next) => {
@@ -1058,6 +1126,16 @@ async function handleStripeWebhook(req, res) {
 
   res.json({ received: true });
 }
+
+// ── Order by session (for success page) ──────────────────────────────────────
+app.get("/api/order/by-session", requireAuth, (req, res) => {
+  const { session_id } = req.query;
+  if (!session_id) return res.status(400).json({ error: "session_id required" });
+  const order = Orders.getBySession(session_id);
+  if (!order) return res.status(404).json({ error: "Not found" });
+  if (order.discord_id !== req.session.user.discord_id) return res.status(403).json({ error: "Forbidden" });
+  res.json(order);
+});
 
 // ── User orders ───────────────────────────────────────────────────────────────
 app.get("/api/orders/mine", requireAuth, (req, res) => {
