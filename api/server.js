@@ -1049,7 +1049,7 @@ async function handleStripeWebhook(req, res) {
 
     try {
       const { dmUser, sendPurchaseLog } = require("../bot/bot");
-      await dmUser(order.discord_id, [purchaseSuccessEmbed(completedOrder, product)]);
+      await dmUser(order.discord_id, purchaseSuccessEmbed(completedOrder, product));
       await sendPurchaseLog(completedOrder, product);
     } catch (err) {
       console.error("Discord notify failed:", err.message);
