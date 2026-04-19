@@ -227,13 +227,13 @@ textarea{resize:vertical;min-height:80px;}
 <div id="app">
 
 <nav>
-  <div class="logo" onclick="showPage('store',event)">
+  <div class="logo" onclick="showPage('store')">
     <div class="logo-icon">N</div>NexusKeys
   </div>
   <div class="nav-links">
-    <button class="nav-link active" onclick="showPage('store',event)">Store</button>
-    <button class="nav-link" onclick="showPage('orders',event)">My Orders</button>
-    <button class="nav-link" id="dashNav" style="display:none" onclick="showPage('dash',event)">Dashboard</button>
+    <button class="nav-link active" onclick="showPage('store')">Store</button>
+    <button class="nav-link" onclick="showPage('orders')">My Orders</button>
+    <button class="nav-link" id="dashNav" style="display:none" onclick="showPage('dash')">Dashboard</button>
   </div>
   <div id="authArea"></div>
 </nav>
@@ -782,11 +782,14 @@ async function deleteProduct(id, name) {
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-function showPage(name, event) {
+function showPage(name) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById(`page-${name}`).classList.add("active");
+  // Update active nav link
   document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
-  if (event && event.target.classList.contains("nav-link")) event.target.classList.add("active");
+  const navMap = { store: 0, orders: 1, dash: 2 };
+  const navLinks = document.querySelectorAll(".nav-link");
+  if (navLinks[navMap[name]]) navLinks[navMap[name]].classList.add("active");
   if (name === "orders") loadMyOrders();
   if (name === "dash") loadAdminData();
 }
