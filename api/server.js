@@ -34,7 +34,19 @@ app.use(session({
   },
 }));
 
-app.use(express.static(path.join(__dirname, "../dashboard/public")));
+// Dynamically find dashboard/public regardless of nesting
+const fs = require("fs");
+let PUBLIC_DIR = path.resolve(__dirname, "../dashboard/public");
+if (!fs.existsSync(PUBLIC_DIR)) {
+  // Try one level up (repo subfolder case)
+  PUBLIC_DIR = path.resolve(__dirname, "../../dashboard/public");
+}
+if (!fs.existsSync(PUBLIC_DIR)) {
+  // Try from process.cwd
+  PUBLIC_DIR = path.join(process.cwd(), "dashboard/public");
+}
+console.log("Serving static from:", PUBLIC_DIR);
+app.use(express.static(PUBLIC_DIR));
 
 const requireAuth = (req, res, next) => {
   if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
@@ -276,7 +288,7 @@ app.get("/api/admin/orders", requireAdmin, (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../dashboard/public/index.html"));
+  res.sendFile(path.join(PUBLIC_DIR, "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
