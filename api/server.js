@@ -1,0 +1,1123 @@
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const cors = require("cors");
+const morgan = require("morgan");
+const axios = require("axios");
+const path = require("path");
+const Stripe = require("stripe");
+
+const { Products, Variants, Keys, Orders, Users } = require("../shared/db");
+const { purchaseSuccessEmbed } = require("../shared/embeds");
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder");
+const app = express();
+
+// ── Stripe webhook needs raw body ─────────────────────────────────────────────
+app.post("/webhooks/stripe", express.raw({ type: "application/json" }), handleStripeWebhook);
+
+// ── Core middleware ───────────────────────────────────────────────────────────
+app.set("trust proxy", 1);
+app.use(morgan("dev"));
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || "nexuskeys-secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
+}));
+
+// ── Inline HTML (no static folder needed) ────────────────────────────────────
+const INDEX_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NexusKeys</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080b14;--surf:#0d1120;--surf2:#111827;--bdr:#1e2a3a;--bdr2:#243044;
+  --nx:#6366f1;--nx2:#818cf8;--grn:#22c55e;--red:#ef4444;--ylw:#f59e0b;
+  --txt:#e2e8f0;--mut:#64748b;
+  --mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif
+}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,11,20,.95);border-bottom:1px solid var(--bdr);backdrop-filter:blur(12px)}
+.logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.3px}
+.logo-icon{width:28px;height:28px;background:var(--nx);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.nav-links{display:flex;gap:4px}
+.nav-btn{padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--mut);font-family:var(--sans);transition:all .15s}
+.nav-btn:hover,.nav-btn.active{color:var(--txt);background:var(--surf2)}
+.discord-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:#5865f2;border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.discord-btn:hover{background:#4752c4}
+.user-chip{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);font-size:13px;font-weight:600}
+.avatar{width:24px;height:24px;border-radius:50%}
+.logout{background:none;border:none;color:var(--mut);cursor:pointer;font-size:14px;padding:2px 4px}
+.logout:hover{color:var(--red)}
+
+/* ── PAGES ── */
+.page{display:none}
+.page.show{display:block}
+.wrap{max-width:1100px;margin:0 auto;padding:80px 24px 60px}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:90px 24px 50px;max-width:660px;margin:0 auto}
+.live-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr2);font-size:12px;font-weight:600;color:var(--nx2);margin-bottom:20px;letter-spacing:.5px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:clamp(32px,6vw,58px);font-weight:700;line-height:1.1;letter-spacing:-1.5px;margin-bottom:14px}
+.hero h1 span{color:var(--nx2)}
+.hero p{font-size:15px;color:var(--mut);margin-bottom:26px;line-height:1.6}
+.hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s}
+.btn-primary{background:var(--nx);color:#fff}
+.btn-primary:hover{background:var(--nx2);transform:translateY(-1px)}
+.btn-ghost{background:var(--surf2);color:var(--txt);border:1px solid var(--bdr2)}
+.btn-ghost:hover{border-color:var(--nx)}
+.btn-danger{background:#ef444418;color:var(--red);border:1px solid #ef444430}
+.btn-danger:hover{background:#ef444428}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ── STATS ── */
+.stats{display:flex;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)}
+.stat{flex:1;text-align:center;padding:18px 12px;border-right:1px solid var(--bdr)}
+.stat:last-child{border-right:none}
+.stat-n{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--nx2)}
+.stat-l{font-size:11px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── TICKER ── */
+.ticker-wrap{overflow:hidden;border-bottom:1px solid var(--bdr);background:var(--surf);padding:8px 0}
+.ticker{display:flex;gap:40px;animation:tick 25s linear infinite;white-space:nowrap;width:max-content}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick-item{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+.tick-dot{width:5px;height:5px;border-radius:50%;background:var(--grn);flex-shrink:0}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
+.search{flex:1;min-width:180px;padding:9px 14px;border-radius:9px;background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s}
+.search:focus{border-color:var(--nx)}
+.search::placeholder{color:var(--mut)}
+.cat-btn{padding:7px 13px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--bdr2);background:var(--surf);color:var(--mut);font-family:var(--sans);transition:all .15s}
+.cat-btn:hover{border-color:var(--nx);color:var(--txt)}
+.cat-btn.active{background:var(--nx);border-color:var(--nx);color:#fff}
+
+/* ── PRODUCT GRID ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.card{background:#111418;border:1px solid #1e2530;border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;height:420px}
+.card:hover{border-color:#6366f160;transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.6)}
+.card.oos{opacity:.5}
+.card-img-wrap{position:relative;width:100%;height:160px;flex-shrink:0;overflow:hidden;background:#0d1017}
+.card-img{width:100%;height:100%;object-fit:cover}
+.card-img-ph{width:100%;height:100%;background:linear-gradient(135deg,#0d1017,#1a2030);display:flex;align-items:center;justify-content:center;font-size:40px;color:#2a3550}
+.status{position:absolute;top:12px;left:12px;padding:4px 11px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase}
+.status.s-in{background:#22c55e22;border:1px solid #22c55e55;color:#22c55e}
+.status.s-low{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b}
+.status.s-out{background:#ef444422;border:1px solid #ef444455;color:#ef4444}
+.card-body{padding:16px;display:flex;flex-direction:column;flex:1}
+.card-name{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+.card-desc{font-size:13px;color:var(--mut);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1;margin-bottom:12px}
+.card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.card-tag{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid #1e2a3a;background:#0d1017;color:#94a3b8}
+.card-foot{display:flex;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-top:12px;border-top:1px solid #1e2a3a}
+.card-price-l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.card-price{font-size:21px;font-weight:800;font-family:var(--mono);color:#ef4444}
+.view-btn{padding:9px 16px;border-radius:8px;background:#1a2030;border:1px solid #2a3550;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.view-btn:hover{background:var(--nx);border-color:var(--nx)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;animation:fi .15s}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;width:100%;max-width:500px;overflow:hidden;animation:su .2s;max-height:90vh;overflow-y:auto}
+@keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.modal-img{width:100%;height:200px;object-fit:cover}
+.modal-img-ph{width:100%;height:200px;background:linear-gradient(135deg,#0d1017,#1a2030);display:flex;align-items:center;justify-content:center;font-size:56px;color:#2a3550}
+.modal-body{padding:22px}
+.modal-cat{font-size:11px;font-weight:700;color:var(--nx2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.modal-title{font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.modal-desc{font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:18px}
+.vnt-label{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.vnt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.vnt-btn{padding:11px;border-radius:10px;border:2px solid var(--bdr2);background:var(--surf2);cursor:pointer;font-family:var(--sans);transition:all .15s;text-align:center}
+.vnt-btn:hover:not(:disabled){border-color:var(--nx)}
+.vnt-btn.picked{border-color:var(--nx);background:#6366f115}
+.vnt-btn:disabled{opacity:.4;cursor:not-allowed}
+.vnt-name{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:3px}
+.vnt-price{font-size:15px;font-weight:700;font-family:var(--mono);color:var(--nx2)}
+.vnt-stock{font-size:11px;color:var(--grn);margin-top:2px}
+.vnt-stock.low{color:var(--ylw)}
+.vnt-stock.none{color:var(--red)}
+.modal-actions{display:flex;gap:10px}
+.buy-btn{flex:1;padding:12px;border-radius:9px;background:var(--nx);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.buy-btn:hover:not(:disabled){background:var(--nx2)}
+.buy-btn:disabled{opacity:.4;cursor:not-allowed}
+.close-btn{width:42px;height:42px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
+.close-btn:hover{color:var(--txt)}
+
+/* ── ORDERS ── */
+.order-card{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:18px;margin-bottom:12px}
+.order-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.order-id{font-family:var(--mono);font-size:13px;color:var(--nx2);font-weight:700}
+.key-box{background:var(--bg);border:1px dashed var(--bdr2);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--nx2);word-break:break-all;margin-top:10px}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.b-grn{background:#22c55e20;color:var(--grn)}
+.b-ylw{background:#f59e0b20;color:var(--ylw)}
+.b-red{background:#ef444420;color:var(--red)}
+.b-nx{background:#6366f120;color:var(--nx2)}
+
+/* ── DASHBOARD ── */
+.dash{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 60px);margin-top:60px}
+.sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.sb-label{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin:14px 0 6px}
+.sb-label:first-child{margin-top:0}
+.sb-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--mut);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--sans);transition:all .15s}
+.sb-btn:hover{color:var(--txt);background:var(--surf2)}
+.sb-btn.active{color:var(--txt);background:var(--surf2);border-left:2px solid var(--nx)}
+.dash-content{padding:26px;overflow:auto}
+.page-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--mut);font-size:13px;margin-bottom:22px}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.sc{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;padding:16px}
+.sc-l{font-size:11px;color:var(--mut);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.sc-n{font-size:22px;font-weight:700;font-family:var(--mono)}
+.tbl-wrap{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;overflow:hidden;margin-bottom:18px}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bdr)}
+.tbl-title{font-size:14px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surf2)}
+th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.5px;text-transform:uppercase}
+td{padding:11px 14px;border-bottom:1px solid var(--bdr);font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.012)}
+.form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;padding:22px;margin-bottom:18px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid .full{grid-column:1/-1}
+.field{margin-bottom:0}
+.lbl{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:9px 12px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--txt);font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--nx)}
+textarea{resize:vertical;min-height:80px}
+.p-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--bdr)}
+.p-row:last-child{border-bottom:none}
+.p-img{width:50px;height:50px;border-radius:8px;object-fit:cover;background:var(--surf2);flex-shrink:0}
+.p-img-ph{width:50px;height:50px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.v-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.v-row:last-child{border-bottom:none}
+.keys-list{background:var(--bg);border:1px solid var(--bdr);border-radius:9px;overflow:hidden;max-height:280px;overflow-y:auto;margin-top:12px}
+.key-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr);font-size:12px}
+.key-row:last-child{border-bottom:none}
+.key-val{flex:1;font-family:var(--mono);color:var(--nx2)}
+.key-date{color:var(--mut);font-size:11px}
+.key-del{background:none;border:none;color:var(--mut);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:13px}
+.key-del:hover{color:var(--red)}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:50px 20px;color:var(--mut)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.spin-wrap{display:flex;align-items:center;justify-content:center;padding:50px}
+.spin{width:32px;height:32px;border:3px solid var(--bdr2);border-top-color:var(--nx);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:22px;right:22px;z-index:300;background:var(--surf);border:1px solid var(--bdr2);border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:su .2s}
+.sec-title{font-size:14px;font-weight:700;margin-bottom:12px}
+
+@media(max-width:768px){
+  .dash{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;display:flex;overflow-x:auto;padding:8px;gap:3px}
+  .sb-btn{flex-shrink:0}
+  .fgrid{grid-template-columns:1fr}
+  .fgrid .full{grid-column:1}
+  .vnt-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" id="logoBtn"><div class="logo-icon">N</div>NexusKeys</div>
+  <div class="nav-links">
+    <button class="nav-btn active" id="nav-store">Store</button>
+    <button class="nav-btn" id="nav-orders">My Orders</button>
+    <button class="nav-btn" id="nav-dash" style="display:none">Dashboard</button>
+  </div>
+  <div id="authArea"></div>
+</nav>
+
+<!-- STORE -->
+<div class="page show" id="page-store">
+  <div class="hero">
+    <div class="live-badge"><span class="dot"></span>Live — Instant Key Delivery</div>
+    <h1>Premium Software<br><span>Keys & Licenses</span></h1>
+    <p>Instant delivery · Secured by Stripe · Discord verified</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary" id="browseBtn">Browse Products</button>
+      <button class="btn btn-ghost" id="heroLoginBtn">Login with Discord</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="statP">—</div><div class="stat-l">Products</div></div>
+    <div class="stat"><div class="stat-n">1,240+</div><div class="stat-l">Orders</div></div>
+    <div class="stat"><div class="stat-n">$8.4k+</div><div class="stat-l">Revenue</div></div>
+    <div class="stat"><div class="stat-n">⚡</div><div class="stat-l">Instant</div></div>
+  </div>
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span class="tick-item"><span class="tick-dot"></span>user****23 purchased Windows 11 Pro · 2m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>disc****77 purchased VPN Premium · 5m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>xeno****45 purchased Office 365 · 12m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>user****91 purchased Spotify Premium · 18m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>user****23 purchased Windows 11 Pro · 2m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>disc****77 purchased VPN Premium · 5m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>xeno****45 purchased Office 365 · 12m ago</span>
+      <span class="tick-item"><span class="tick-dot"></span>user****91 purchased Spotify Premium · 18m ago</span>
+    </div>
+  </div>
+  <div class="wrap" id="products-section">
+    <div class="filters">
+      <input class="search" id="searchInput" placeholder="Search products…">
+      <div id="catFilters"></div>
+    </div>
+    <div class="grid" id="productGrid"><div class="spin-wrap"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="page-orders">
+  <div class="wrap">
+    <div class="page-title">My Orders</div>
+    <div class="page-sub">Your purchase history</div>
+    <div id="ordersList"><div class="spin-wrap"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page" id="page-dash">
+  <div class="dash">
+    <div class="sidebar">
+      <div class="sb-label">Overview</div>
+      <button class="sb-btn active" id="sb-overview">📊 Overview</button>
+      <button class="sb-btn" id="sb-orders-admin">📋 Orders</button>
+      <div class="sb-label">Products</div>
+      <button class="sb-btn" id="sb-products-admin">📦 Products</button>
+      <button class="sb-btn" id="sb-add-product">➕ Add Product</button>
+      <button class="sb-btn" id="sb-add-keys">🔑 Add Keys</button>
+    </div>
+    <div class="dash-content">
+
+      <div id="ds-overview">
+        <div class="page-title">Overview</div>
+        <div class="page-sub">Store at a glance</div>
+        <div class="stat-cards" id="adminStats"><div class="spin-wrap"><div class="spin"></div></div></div>
+        <div class="tbl-wrap">
+          <div class="tbl-hdr"><div class="tbl-title">Recent Orders</div></div>
+          <div id="ordersPreview"></div>
+        </div>
+      </div>
+
+      <div id="ds-orders-admin" style="display:none">
+        <div class="page-title">All Orders</div>
+        <div class="page-sub">Complete order history</div>
+        <div class="tbl-wrap" id="allOrdersTable"></div>
+      </div>
+
+      <div id="ds-products-admin" style="display:none">
+        <div class="page-title">Products</div>
+        <div class="page-sub">Manage your catalog</div>
+        <div class="form-card" id="productsList"></div>
+      </div>
+
+      <div id="ds-add-product" style="display:none">
+        <div class="page-title">Add Product</div>
+        <div class="page-sub">Create a new product with variants</div>
+        <div class="form-card">
+          <div class="fgrid">
+            <div class="field"><label class="lbl">Product Name</label><input id="nPName" placeholder="e.g. Windows 11 Pro"></div>
+            <div class="field"><label class="lbl">Category</label><input id="nPCat" placeholder="e.g. Software"></div>
+            <div class="field full"><label class="lbl">Image URL</label><input id="nPImg" placeholder="https://example.com/image.jpg"></div>
+            <div class="field full"><label class="lbl">Description</label><textarea id="nPDesc" placeholder="Brief product description…"></textarea></div>
+          </div>
+          <div style="margin:14px 0 8px;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">Variants (add at least one)</div>
+          <div id="variantInputs">
+            <div class="vnt-input-row" style="display:flex;gap:8px;margin-bottom:8px">
+              <input placeholder="Name e.g. 1 Day" style="flex:2" class="vn">
+              <input placeholder="Price e.g. 4.99" style="flex:1" class="vp" type="number" step="0.01">
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="addVariantRowBtn" style="margin-bottom:14px">+ Add Variant</button><br>
+          <button class="btn btn-primary" id="createProductBtn">Create Product</button>
+        </div>
+      </div>
+
+      <div id="ds-add-keys" style="display:none">
+        <div class="page-title">Add Keys</div>
+        <div class="page-sub">Upload stock — one key per line</div>
+        <div class="form-card">
+          <div class="field" style="margin-bottom:12px"><label class="lbl">Product</label>
+            <select id="keyProdSel"><option value="">Select product…</option></select>
+          </div>
+          <div class="field" style="margin-bottom:12px"><label class="lbl">Variant</label>
+            <select id="keyVntSel"><option value="">Select variant…</option></select>
+          </div>
+          <div id="keysList"></div>
+          <div class="field" style="margin-bottom:12px"><label class="lbl">Add Keys (one per line)</label>
+            <textarea id="keysInput" placeholder="XXXXX-XXXXX&#10;YYYYY-YYYYY" style="min-height:140px;font-family:var(--mono);font-size:13px"></textarea>
+          </div>
+          <button class="btn btn-primary" id="uploadKeysBtn">Upload Keys</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="overlay" style="display:none"></div>
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+var user = null;
+var products = [];
+var adminProds = [];
+var activeCat = "All";
+var selVariantId = null;
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", function() {
+  bindNav();
+  bindDash();
+  loadUser().then(function() { loadProducts(); });
+});
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+function loadUser() {
+  return fetch("/api/me").then(function(r) { return r.json(); }).then(function(u) {
+    user = u;
+    renderNav();
+  }).catch(function() {});
+}
+
+function renderNav() {
+  var auth = document.getElementById("authArea");
+  var dashNav = document.getElementById("nav-dash");
+  var heroBtn = document.getElementById("heroLoginBtn");
+  if (user && user.discord_id) {
+    auth.innerHTML = '<div class="user-chip"><img class="avatar" src="'+(user.avatar||'')+'" onerror="this.style.display=\\'none\\'"><span>'+user.username+'</span><button class="logout" id="logoutBtn">✕</button></div>';
+    document.getElementById("logoutBtn").addEventListener("click", function() { window.location.href = "/auth/logout"; });
+    if (user.is_admin) dashNav.style.display = "";
+    if (heroBtn) heroBtn.style.display = "none";
+  } else {
+    auth.innerHTML = '<button class="discord-btn" id="navLoginBtn"><svg width="16" height="12" viewBox="0 0 71 55" fill="none"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5 0a40.3 40.3 0 0 0-1.8 3.6 54 54 0 0 0-16.3 0A39 39 0 0 0 25.6 0 58.3 58.3 0 0 0 11 4.9C1.6 19 -1 32.7.3 46.3a59 59 0 0 0 18 9.1 44.4 44.4 0 0 0 3.8-6.2 38.3 38.3 0 0 1-6-2.9l1.5-1.1a42 42 0 0 0 36 0l1.5 1a38.4 38.4 0 0 1-6 2.9 44.2 44.2 0 0 0 3.8 6.2 58.8 58.8 0 0 0 18-9 56.5 56.5 0 0 0-9.8-39.3ZM23.7 37.9c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2Z" fill="#fff"/></svg> Login with Discord</button>';
+    document.getElementById("navLoginBtn").addEventListener("click", function() { window.location.href = "/auth/discord"; });
+    if (heroBtn) heroBtn.addEventListener("click", function() { window.location.href = "/auth/discord"; });
+  }
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────────
+function bindNav() {
+  document.getElementById("logoBtn").addEventListener("click", function() { goPage("store"); });
+  document.getElementById("nav-store").addEventListener("click", function() { goPage("store"); });
+  document.getElementById("nav-orders").addEventListener("click", function() { goPage("orders"); });
+  document.getElementById("nav-dash").addEventListener("click", function() { goPage("dash"); });
+  document.getElementById("browseBtn").addEventListener("click", function() {
+    document.getElementById("products-section").scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+function goPage(name) {
+  document.querySelectorAll(".page").forEach(function(p) { p.classList.remove("show"); });
+  document.getElementById("page-"+name).classList.add("show");
+  document.querySelectorAll(".nav-btn").forEach(function(b) { b.classList.remove("active"); });
+  var nb = document.getElementById("nav-"+name);
+  if (nb) nb.classList.add("active");
+  if (name === "orders") loadOrders();
+  if (name === "dash") loadAdminData();
+}
+
+// ── Products ───────────────────────────────────────────────────────────────────
+function loadProducts() {
+  fetch("/api/products").then(function(r) { return r.json(); }).then(function(data) {
+    products = data;
+    document.getElementById("statP").textContent = products.length;
+    renderCats();
+    renderProducts();
+  }).catch(function() {
+    document.getElementById("productGrid").innerHTML = '<div class="empty"><div class="empty-icon">⚠</div>Failed to load</div>';
+  });
+}
+
+function renderCats() {
+  var cats = ["All"];
+  products.forEach(function(p) { if (!cats.includes(p.category)) cats.push(p.category); });
+  document.getElementById("catFilters").innerHTML = cats.map(function(c) {
+    return '<button class="cat-btn'+(c===activeCat?" active":"")+'" data-cat="'+c+'">'+c+'</button>';
+  }).join("");
+  document.querySelectorAll(".cat-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      activeCat = this.dataset.cat;
+      renderCats();
+      renderProducts();
+    });
+  });
+}
+
+function renderProducts() {
+  var q = (document.getElementById("searchInput").value || "").toLowerCase();
+  var filtered = products.filter(function(p) {
+    return (activeCat === "All" || p.category === activeCat) && p.name.toLowerCase().includes(q);
+  });
+  if (!filtered.length) {
+    document.getElementById("productGrid").innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div>No products found</div>';
+    return;
+  }
+  document.getElementById("productGrid").innerHTML = filtered.map(function(p) {
+    var totalStock = (p.variants||[]).reduce(function(s,v){return s+v.stock;},0);
+    var lowestPrice = p.variants && p.variants.length ? Math.min.apply(null, p.variants.map(function(v){return v.price;})) : 0;
+    var sClass = totalStock===0?"s-out":totalStock<=10?"s-low":"s-in";
+    var sText = totalStock===0?"OUT OF STOCK":totalStock<=10?"LOW STOCK":"IN STOCK";
+    var tags = (p.variants||[]).map(function(v){return '<span class="card-tag">'+v.name+'</span>';}).join("");
+    var imgHtml = p.image_url
+      ? '<img class="card-img" src="'+p.image_url+'" alt="'+p.name+'" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'">'
+        + '<div class="card-img-ph" style="display:none">⬡</div>'
+      : '<div class="card-img-ph">⬡</div>';
+    return '<div class="card'+(totalStock===0?" oos":"")+'\\" data-pid="'+p.id+'">'
+      + '<div class="card-img-wrap">'+imgHtml+'<div class="status '+sClass+'">'+sText+'</div></div>'
+      + '<div class="card-body">'
+      + '<div class="card-name">'+p.name+'</div>'
+      + '<div class="card-desc">'+(p.description||"Premium software license. Instant delivery.")+'</div>'
+      + '<div class="card-tags">'+tags+'</div>'
+      + '<div class="card-foot">'
+      + '<div><div class="card-price-l">Starting at</div><div class="card-price">$'+Number(lowestPrice).toFixed(2)+'</div></div>'
+      + '<button class="view-btn" data-pid="'+p.id+'">View Details</button>'
+      + '</div></div></div>';
+  }).join("");
+
+  document.querySelectorAll(".card, .view-btn").forEach(function(el) {
+    el.addEventListener("click", function(e) {
+      e.stopPropagation();
+      var pid = this.dataset.pid || this.closest(".card").dataset.pid;
+      openProduct(pid);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var si = document.getElementById("searchInput");
+  if (si) si.addEventListener("input", renderProducts);
+});
+
+// ── Product Modal ──────────────────────────────────────────────────────────────
+function openProduct(pid) {
+  var p = products.find(function(x){return x.id===pid;});
+  if (!p) return;
+  selVariantId = null;
+
+  var imgHtml = p.image_url
+    ? '<img class="modal-img" src="'+p.image_url+'" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'">'
+      + '<div class="modal-img-ph" style="display:none">⬡</div>'
+    : '<div class="modal-img-ph">⬡</div>';
+
+  var vnts = (p.variants||[]).map(function(v) {
+    var s = v.stock;
+    var sc = s===0?"none":s<=5?"low":"";
+    var st = s===0?"Out of stock":s<=5?"Low — "+s+" left":s+" in stock";
+    return '<button class="vnt-btn" data-vid="'+v.id+'" data-price="'+v.price+'" data-name="'+v.name+'"'+(s===0?" disabled":"")+'>'
+      + '<div class="vnt-name">'+v.name+'</div>'
+      + '<div class="vnt-price">$'+Number(v.price).toFixed(2)+'</div>'
+      + '<div class="vnt-stock '+sc+'">'+st+'</div>'
+      + '</button>';
+  }).join("");
+
+  var html = '<div class="modal">'
+    + imgHtml
+    + '<div class="modal-body">'
+    + '<div class="modal-cat">'+p.category+'</div>'
+    + '<div class="modal-title">'+p.name+'</div>'
+    + '<div class="modal-desc">'+(p.description||"Premium software license.")+'</div>'
+    + '<div class="vnt-label">Select a plan</div>'
+    + '<div class="vnt-grid">'+vnts+'</div>'
+    + '<div class="modal-actions">'
+    + '<button class="buy-btn" id="modalBuyBtn" disabled>Select a plan</button>'
+    + '<button class="close-btn" id="modalCloseBtn">✕</button>'
+    + '</div></div></div>';
+
+  var overlay = document.getElementById("overlay");
+  overlay.innerHTML = html;
+  overlay.style.display = "flex";
+
+  overlay.addEventListener("click", function(e) { if (e.target===overlay) closeModal(); });
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+
+  document.querySelectorAll(".vnt-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      selVariantId = this.dataset.vid;
+      var price = this.dataset.price;
+      var name = this.dataset.name;
+      document.querySelectorAll(".vnt-btn").forEach(function(b){b.classList.remove("picked");});
+      this.classList.add("picked");
+      var buyBtn = document.getElementById("modalBuyBtn");
+      buyBtn.disabled = false;
+      buyBtn.textContent = "Buy Now — $"+Number(price).toFixed(2);
+      buyBtn.dataset.pid = pid;
+    });
+  });
+
+  document.getElementById("modalBuyBtn").addEventListener("click", function() {
+    if (!selVariantId) return;
+    doBuy(this.dataset.pid, selVariantId);
+  });
+}
+
+function closeModal() {
+  document.getElementById("overlay").style.display = "none";
+  selVariantId = null;
+}
+
+function doBuy(pid, vid) {
+  if (!user || !user.discord_id) { closeModal(); window.location.href = "/auth/discord"; return; }
+  var buyBtn = document.getElementById("modalBuyBtn");
+  buyBtn.disabled = true;
+  buyBtn.textContent = "Redirecting…";
+  fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product_id: pid, variant_id: vid }),
+  }).then(function(r){return r.json();}).then(function(data) {
+    if (data.url) { window.location.href = data.url; }
+    else { toast("❌ "+(data.error||"Checkout failed")); buyBtn.disabled=false; buyBtn.textContent="Try Again"; }
+  }).catch(function() { toast("❌ Network error"); buyBtn.disabled=false; buyBtn.textContent="Try Again"; });
+}
+
+// ── Orders ─────────────────────────────────────────────────────────────────────
+function loadOrders() {
+  var el = document.getElementById("ordersList");
+  if (!user || !user.discord_id) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div><p style="margin-bottom:14px">Login to view orders</p><button class="btn btn-primary" id="ordersLoginBtn">Login with Discord</button></div>';
+    document.getElementById("ordersLoginBtn").addEventListener("click", function() { window.location.href = "/auth/discord"; });
+    return;
+  }
+  el.innerHTML = '<div class="spin-wrap"><div class="spin"></div></div>';
+  fetch("/api/orders/mine").then(function(r){return r.json();}).then(function(orders) {
+    if (!orders.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No orders yet</div>'; return; }
+    el.innerHTML = orders.map(function(o) {
+      return '<div class="order-card">'
+        + '<div class="order-hdr"><div><div class="order-id">'+o.id+'</div>'
+        + '<div style="color:var(--mut);font-size:12px;margin-top:2px">'+new Date(o.created_at).toLocaleString()+'</div></div>'
+        + '<span class="badge '+(o.status==="completed"?"b-grn":"b-ylw")+'">'+o.status+'</span></div>'
+        + '<div style="font-weight:600">'+o.product_name+(o.variant_name?" — "+o.variant_name:"")+'</div>'
+        + '<div style="color:var(--nx2);font-family:var(--mono);font-weight:700;font-size:15px;margin-top:4px">$'+Number(o.amount).toFixed(2)+'</div>'
+        + (o.key_value?'<div style="margin-top:8px;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">License Key</div><div class="key-box">'+o.key_value+'</div>':"")
+        + '</div>';
+    }).join("");
+  });
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────────
+function loadAdminData() {
+  fetch("/api/admin/stats").then(function(r){return r.json();}).then(function(data) {
+    adminProds = data.products;
+    var stats = data.stats;
+
+    document.getElementById("adminStats").innerHTML = [
+      {l:"Total Revenue",n:"$"+Number(stats.total_revenue||0).toFixed(2)},
+      {l:"Today",n:"$"+Number(stats.today_revenue||0).toFixed(2)},
+      {l:"Orders",n:stats.total_orders},
+      {l:"Completed",n:stats.completed||0},
+    ].map(function(s){return '<div class="sc"><div class="sc-l">'+s.l+'</div><div class="sc-n">'+s.n+'</div></div>';}).join("");
+
+    document.getElementById("ordersPreview").innerHTML = ordersTable(data.recentOrders.slice(0,8));
+    document.getElementById("allOrdersTable").innerHTML = ordersTable(data.recentOrders);
+
+    document.getElementById("productsList").innerHTML = '<div class="sec-title">All Products</div>' +
+      data.products.map(function(p) {
+        return '<div class="p-row">'
+          + (p.image_url
+            ? '<img class="p-img" src="'+p.image_url+'" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'"><div class="p-img-ph" style="display:none">⬡</div>'
+            : '<div class="p-img-ph">⬡</div>')
+          + '<div style="flex:1">'
+          + '<div style="font-weight:600;font-size:14px;margin-bottom:4px">'+p.name+' <span style="color:var(--mut);font-size:12px">'+p.category+'</span></div>'
+          + (p.variants||[]).map(function(v){
+            return '<div class="v-row"><span style="flex:1">'+v.name+'</span>'
+              + '<span style="font-family:var(--mono);color:var(--nx2);font-weight:700;min-width:55px">$'+Number(v.price).toFixed(2)+'</span>'
+              + '<span class="badge '+(v.stock>5?"b-grn":v.stock>0?"b-ylw":"b-red")+'">'+v.stock+' keys</span>'
+              + '</div>';
+          }).join("")
+          + '</div>'
+          + '<button class="btn btn-danger btn-sm del-prod" data-pid="'+p.id+'" data-name="'+p.name.replace(/"/g,"&quot;")+'">Remove</button>'
+          + '</div>';
+      }).join("");
+
+    // Use event delegation for delete buttons
+    var pl = document.getElementById("productsList");
+    pl.onclick = function(e) {
+      var btn = e.target.closest(".del-prod");
+      if (btn) deleteProduct(btn.dataset.pid, btn.dataset.name);
+    };
+
+    var pSel = document.getElementById("keyProdSel");
+    pSel.innerHTML = '<option value="">Select product…</option>' +
+      data.products.map(function(p){return '<option value="'+p.id+'">'+p.name+'</option>';}).join("");
+  });
+}
+
+function ordersTable(orders) {
+  if (!orders.length) return '<div class="empty">No orders yet</div>';
+  return '<table><thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Variant</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>'
+    + orders.map(function(o) {
+      return '<tr><td style="font-family:var(--mono);color:var(--nx2)">'+o.id+'</td><td>'+o.discord_username+'</td><td>'+o.product_name+'</td><td>'+(o.variant_name||"—")+'</td><td style="font-family:var(--mono);font-weight:700">$'+Number(o.amount).toFixed(2)+'</td><td><span class="badge '+(o.status==="completed"?"b-grn":o.status==="failed"?"b-red":"b-ylw")+'">'+o.status+'</span></td><td style="color:var(--mut)">'+new Date(o.created_at).toLocaleDateString()+'</td></tr>';
+    }).join("") + '</tbody></table>';
+}
+
+function deleteProduct(id, name) {
+  if (!confirm('Remove "'+name+'" from the store?')) return;
+  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function() {
+    toast("✅ Product removed");
+    loadAdminData();
+    loadProducts();
+  });
+}
+
+// ── Dash binding ───────────────────────────────────────────────────────────────
+function bindDash() {
+  var sections = ["overview","orders-admin","products-admin","add-product","add-keys"];
+  sections.forEach(function(s) {
+    var btn = document.getElementById("sb-"+s);
+    if (!btn) return;
+    btn.addEventListener("click", function() {
+      sections.forEach(function(x) {
+        var el = document.getElementById("ds-"+x);
+        if (el) el.style.display = "none";
+        var b = document.getElementById("sb-"+x);
+        if (b) b.classList.remove("active");
+      });
+      var el = document.getElementById("ds-"+s);
+      if (el) el.style.display = "";
+      this.classList.add("active");
+    });
+  });
+
+  document.getElementById("addVariantRowBtn").addEventListener("click", function() {
+    var row = document.createElement("div");
+    row.className = "vnt-input-row";
+    row.style.cssText = "display:flex;gap:8px;margin-bottom:8px";
+    row.innerHTML = '<input placeholder="Name e.g. Lifetime" style="flex:2" class="vn"><input placeholder="Price" style="flex:1" class="vp" type="number" step="0.01"><button class="btn btn-danger btn-sm" style="flex-shrink:0">✕</button>';
+    row.querySelector("button").addEventListener("click", function() { row.remove(); });
+    document.getElementById("variantInputs").appendChild(row);
+  });
+
+  document.getElementById("createProductBtn").addEventListener("click", createProduct);
+
+  document.getElementById("keyProdSel").addEventListener("change", function() {
+    var pid = this.value;
+    var vSel = document.getElementById("keyVntSel");
+    vSel.innerHTML = '<option value="">Select variant…</option>';
+    document.getElementById("keysList").innerHTML = "";
+    if (!pid) return;
+    var p = adminProds.find(function(x){return x.id===pid;});
+    if (!p) return;
+    (p.variants||[]).forEach(function(v) {
+      var opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = v.name+" — $"+Number(v.price).toFixed(2)+" ("+v.stock+" keys)";
+      vSel.appendChild(opt);
+    });
+  });
+
+  document.getElementById("keyVntSel").addEventListener("change", function() {
+    loadKeysList(this.value);
+  });
+
+  document.getElementById("uploadKeysBtn").addEventListener("click", uploadKeys);
+}
+
+function createProduct() {
+  var name = document.getElementById("nPName").value.trim();
+  var cat = document.getElementById("nPCat").value.trim();
+  var img = document.getElementById("nPImg").value.trim();
+  var desc = document.getElementById("nPDesc").value.trim();
+  if (!name) { toast("Product name required"); return; }
+  var variants = [];
+  document.querySelectorAll(".vnt-input-row").forEach(function(row) {
+    var n = row.querySelector(".vn").value.trim();
+    var p = row.querySelector(".vp").value.trim();
+    if (n.trim()) variants.push({ name: n.trim(), price: parseFloat(p) || 0 });
+  });
+  if (!variants.length) { toast("Add at least one variant"); return; }
+  fetch("/api/admin/products", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name, description: desc, category: cat, image_url: img }),
+  }).then(function(r){return r.json();}).then(function(prod) {
+    var chain = Promise.resolve();
+    variants.forEach(function(v, i) {
+      chain = chain.then(function() {
+        return fetch("/api/admin/products/"+prod.id+"/variants", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: v.name, price: v.price, sort_order: i }),
+        });
+      });
+    });
+    return chain;
+  }).then(function() {
+    toast("✅ Product created!");
+    document.getElementById("nPName").value = "";
+    document.getElementById("nPCat").value = "";
+    document.getElementById("nPImg").value = "";
+    document.getElementById("nPDesc").value = "";
+    document.getElementById("variantInputs").innerHTML = '<div class="vnt-input-row" style="display:flex;gap:8px;margin-bottom:8px"><input placeholder="Name e.g. 1 Day" style="flex:2" class="vn"><input placeholder="Price e.g. 4.99" style="flex:1" class="vp" type="number" step="0.01"></div>';
+    loadAdminData();
+    loadProducts();
+  });
+}
+
+function loadKeysList(vid) {
+  var el = document.getElementById("keysList");
+  if (!vid) { el.innerHTML = ""; return; }
+  fetch("/api/admin/variants/"+vid+"/keys").then(function(r){return r.json();}).then(function(keys) {
+    if (!keys.length) { el.innerHTML = '<div style="color:var(--mut);font-size:13px;padding:10px 0">No keys in stock for this variant.</div>'; return; }
+    el.innerHTML = '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;margin-bottom:8px">'+keys.length+' keys in stock</div>'
+      + '<div class="keys-list">'
+      + keys.map(function(k,i) {
+        return '<div class="key-row"><span style="color:var(--mut);min-width:24px;font-size:11px">'+(i+1)+'</span>'
+          + '<span class="key-val">'+k.key_value+'</span>'
+          + '<span class="key-date">'+new Date(k.added_at).toLocaleDateString()+'</span>'
+          + '<button class="key-del" data-kid="'+k.id+'">✕</button></div>';
+      }).join("")
+      + '</div></div>';
+    document.querySelectorAll(".key-del").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var kid = this.dataset.kid;
+        fetch("/api/admin/keys/"+kid, { method: "DELETE" }).then(function() {
+          toast("Key deleted");
+          loadKeysList(document.getElementById("keyVntSel").value);
+          loadAdminData();
+          loadProducts();
+        });
+      });
+    });
+  });
+}
+
+function uploadKeys() {
+  var vid = document.getElementById("keyVntSel").value;
+  var raw = document.getElementById("keysInput").value;
+  if (!vid) { toast("Select a variant"); return; }
+  if (!raw.trim()) { toast("Paste some keys"); return; }
+  var keys = raw.split(/[\\n,]+/).map(function(k){return k.trim();}).filter(Boolean);
+  fetch("/api/admin/variants/"+vid+"/keys", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ keys: keys }),
+  }).then(function(r){return r.json();}).then(function(data) {
+    toast("✅ Added "+data.added+" keys — "+data.stock+" total");
+    document.getElementById("keysInput").value = "";
+    loadKeysList(vid);
+    loadAdminData();
+    loadProducts();
+  });
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "flex";
+  setTimeout(function() { t.style.display = "none"; }, 3000);
+}
+</script>
+</body>
+</html>
+`;
+const SUCCESS_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Order Confirmed — NexusKeys</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080b14;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap');
+.card{background:#0d1120;border:1px solid #1e2a3a;border-radius:18px;padding:44px 36px;text-align:center;max-width:460px;width:90%;animation:su .3s ease}
+@keyframes su{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.check{width:68px;height:68px;background:#22c55e18;border:2px solid #22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px}
+h1{font-size:24px;font-weight:700;margin-bottom:8px}
+p{color:#64748b;font-size:14px;line-height:1.6;margin-bottom:22px}
+.info{background:#080b14;border:1px solid #1e2a3a;border-radius:10px;padding:14px 16px;margin-bottom:22px;text-align:left}
+.info-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.info-label{color:#64748b}
+.info-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px}
+.btn{display:inline-block;padding:11px 22px;border-radius:9px;background:#6366f1;color:#fff;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;border:none;font-family:inherit}
+.btn:hover{background:#818cf8}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="check">✓</div>
+  <h1>Payment Confirmed!</h1>
+  <p>Your license key has been sent to your <strong style="color:#e2e8f0">Discord DMs</strong> and is in your order history.</p>
+  <div class="info">
+    <div class="info-row"><span class="info-label">Status</span><span class="info-val" style="color:#22c55e">✓ COMPLETED</span></div>
+    <div class="info-row"><span class="info-label">Delivery</span><span class="info-val">Discord DMs + Dashboard</span></div>
+    <div class="info-row"><span class="info-label">Payment</span><span class="info-val">Stripe Secured</span></div>
+  </div>
+  <button class="btn" onclick="window.location.href='/'">Back to Store</button>
+  <div style="margin-top:14px;font-size:12px;color:#64748b">Need help? Open a /ticket in our Discord server.</div>
+</div>
+</body>
+</html>
+`;
+
+// ── Auth middleware ───────────────────────────────────────────────────────────
+const requireAuth = (req, res, next) => {
+  if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
+  next();
+};
+const requireAdmin = (req, res, next) => {
+  if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
+  if (!req.session.user.is_admin) return res.status(403).json({ error: "Admin only" });
+  next();
+};
+
+// ── Discord OAuth ─────────────────────────────────────────────────────────────
+app.get("/auth/discord", (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
+    response_type: "code",
+    scope: "identify email",
+  });
+  res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
+});
+
+app.get("/auth/discord/callback", async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.redirect("/?error=no_code");
+  try {
+    const tokenRes = await axios.post(
+      "https://discord.com/api/oauth2/token",
+      new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID,
+        client_secret: process.env.DISCORD_CLIENT_SECRET,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+    const { access_token, refresh_token } = tokenRes.data;
+    const userRes = await axios.get("https://discord.com/api/users/@me", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+    const d = userRes.data;
+    const user = Users.upsert({
+      discord_id: d.id,
+      username: d.username,
+      avatar: d.avatar
+        ? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`,
+      access_token,
+      refresh_token,
+    });
+    req.session.user = user;
+    req.session.save(() => res.redirect("/"));
+  } catch (err) {
+    console.error("OAuth error:", err.response?.data || err.message);
+    res.redirect("/?error=oauth_failed");
+  }
+});
+
+app.get("/auth/logout", (req, res) => {
+  req.session.destroy();
+  res.redirect("/");
+});
+
+app.get("/api/me", (req, res) => {
+  if (!req.session.user) return res.json(null);
+  const { access_token, refresh_token, ...safe } = req.session.user;
+  res.json(safe);
+});
+
+// ── Products ──────────────────────────────────────────────────────────────────
+app.get("/api/products", (req, res) => {
+  const products = Products.getAll().map(p => ({
+    ...p,
+    variants: Variants.getByProduct(p.id).map(v => ({ ...v, stock: Keys.stock(v.id) })),
+  }));
+  res.json(products);
+});
+
+// ── Checkout ──────────────────────────────────────────────────────────────────
+app.post("/api/checkout", requireAuth, async (req, res) => {
+  const { product_id, variant_id } = req.body;
+  const product = Products.getById(product_id);
+  const variant = Variants.getById(variant_id);
+  if (!product || !variant) return res.status(404).json({ error: "Not found" });
+  if (Keys.stock(variant_id) === 0) return res.status(400).json({ error: "Out of stock" });
+
+  try {
+    const sess = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [{
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `${product.name} — ${variant.name}`,
+            description: product.description,
+            ...(product.image_url ? { images: [product.image_url] } : {}),
+          },
+          unit_amount: Math.round(variant.price * 100),
+        },
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${process.env.BASE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.BASE_URL}/`,
+      metadata: {
+        product_id: product.id,
+        variant_id: variant.id,
+        discord_id: req.session.user.discord_id,
+        discord_username: req.session.user.username,
+      },
+    });
+
+    Orders.create({
+      discord_id: req.session.user.discord_id,
+      discord_username: req.session.user.username,
+      product_id: product.id,
+      product_name: product.name,
+      variant_id: variant.id,
+      variant_name: variant.name,
+      amount: variant.price,
+      stripe_session_id: sess.id,
+    });
+
+    res.json({ url: sess.url });
+  } catch (err) {
+    console.error("Stripe error:", err.message);
+    res.status(500).json({ error: "Payment failed" });
+  }
+});
+
+// ── Stripe Webhook ────────────────────────────────────────────────────────────
+async function handleStripeWebhook(req, res) {
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      req.headers["stripe-signature"],
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const order = Orders.getBySession(session.id);
+    if (!order || order.status === "completed") return res.json({ received: true });
+
+    const product = Products.getById(order.product_id);
+    const keyValue = Keys.claimAndDelete(order.variant_id);
+
+    if (!keyValue) {
+      Orders.fail(order.id);
+      return res.json({ received: true });
+    }
+
+    const completedOrder = Orders.complete(order.id, {
+      stripe_payment_id: session.payment_intent,
+      key_value: keyValue,
+    });
+
+    try {
+      const { dmUser, sendPurchaseLog } = require("../bot/bot");
+      await dmUser(order.discord_id, [purchaseSuccessEmbed(completedOrder, product)]);
+      await sendPurchaseLog(completedOrder, product);
+    } catch (err) {
+      console.error("Discord notify failed:", err.message);
+    }
+  }
+
+  res.json({ received: true });
+}
+
+// ── User orders ───────────────────────────────────────────────────────────────
+app.get("/api/orders/mine", requireAuth, (req, res) => {
+  res.json(Orders.getByUser(req.session.user.discord_id));
+});
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+app.get("/api/admin/stats", requireAdmin, (req, res) => {
+  const products = Products.getAllAdmin().map(p => ({
+    ...p,
+    variants: Variants.getByProduct(p.id).map(v => ({ ...v, stock: Keys.stock(v.id) })),
+  }));
+  res.json({ stats: Orders.getStats(), products, recentOrders: Orders.getRecent(20) });
+});
+
+app.post("/api/admin/products", requireAdmin, (req, res) => {
+  const { name, description, category, image_url } = req.body;
+  if (!name) return res.status(400).json({ error: "name required" });
+  res.json(Products.create({ name, description, category, image_url }));
+});
+
+app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
+  Products.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/products/:id/variants", requireAdmin, (req, res) => {
+  const { name, price, sort_order } = req.body;
+  if (!name || price === undefined || price === null || price === "") return res.status(400).json({ error: "name and price required" });
+  res.json(Variants.create({ product_id: req.params.id, name, price, sort_order }));
+});
+
+app.post("/api/admin/variants/:id/keys", requireAdmin, (req, res) => {
+  const { keys } = req.body;
+  if (!Array.isArray(keys) || !keys.length) return res.status(400).json({ error: "keys array required" });
+  const variant = Variants.getById(req.params.id);
+  if (!variant) return res.status(404).json({ error: "Variant not found" });
+  const added = Keys.addBulk(variant.product_id, variant.id, keys);
+  res.json({ added, stock: Keys.stock(variant.id) });
+});
+
+app.get("/api/admin/variants/:id/keys", requireAdmin, (req, res) => {
+  res.json(Keys.listByVariant(req.params.id));
+});
+
+app.delete("/api/admin/keys/:id", requireAdmin, (req, res) => {
+  Keys.deleteById(req.params.id);
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/orders", requireAdmin, (req, res) => {
+  res.json(Orders.getRecent(100));
+});
+
+// ── Routes → inline HTML ──────────────────────────────────────────────────────
+app.get("/order/success", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(SUCCESS_HTML);
+});
+
+app.get("*", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(INDEX_HTML);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`NexusKeys API running on port ${PORT}`));
+
+module.exports = app;
