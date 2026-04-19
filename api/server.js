@@ -138,7 +138,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;ali
 .view-btn:hover{background:var(--nx);border-color:var(--nx)}
 
 /* ── MODAL ── */
-.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;animation:fi .15s}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fi .15s}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 .modal{background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;width:100%;max-width:500px;overflow:hidden;animation:su .2s;max-height:90vh;overflow-y:auto}
 @keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
@@ -383,7 +383,9 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <!-- MODAL -->
-<div id="overlay" style="display:none"></div>
+
+<!-- MODAL OVERLAY - outside all pages so it overlays everything -->
+<div id="overlay" class="overlay" style="display:none"></div>
 <!-- TOAST -->
 <div id="toast" class="toast" style="display:none"></div>
 
@@ -559,31 +561,31 @@ function openProduct(pid) {
   overlay.innerHTML = html;
   overlay.style.display = "flex";
 
-  overlay.addEventListener("click", function(e) { if (e.target===overlay) closeModal(); });
-  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+  // Use onclick to avoid stacking listeners
+  overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+  document.getElementById("modalCloseBtn").onclick = closeModal;
 
-  document.querySelectorAll(".vnt-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      selVariantId = this.dataset.vid;
-      var price = this.dataset.price;
-      var name = this.dataset.name;
+  // Use event delegation on modal for variant buttons
+  var modal = overlay.querySelector(".modal");
+  modal.onclick = function(e) {
+    var vBtn = e.target.closest(".vnt-btn");
+    if (vBtn && !vBtn.disabled) {
+      selVariantId = vBtn.dataset.vid;
       document.querySelectorAll(".vnt-btn").forEach(function(b){b.classList.remove("picked");});
-      this.classList.add("picked");
+      vBtn.classList.add("picked");
       var buyBtn = document.getElementById("modalBuyBtn");
       buyBtn.disabled = false;
-      buyBtn.textContent = "Buy Now — $"+Number(price).toFixed(2);
-      buyBtn.dataset.pid = pid;
-    });
-  });
-
-  document.getElementById("modalBuyBtn").addEventListener("click", function() {
-    if (!selVariantId) return;
-    doBuy(this.dataset.pid, selVariantId);
-  });
+      buyBtn.textContent = "Buy Now — $"+Number(vBtn.dataset.price).toFixed(2);
+    }
+    var bBtn = e.target.closest("#modalBuyBtn");
+    if (bBtn && !bBtn.disabled && selVariantId) {
+      doBuy(pid, selVariantId);
+    }
+  };
 }
 
 function closeModal() {
-  document.getElementById("overlay").style.display = "none";
+  var ov = document.getElementById("overlay"); ov.style.display = "none"; ov.innerHTML = "";
   selVariantId = null;
 }
 
