@@ -505,13 +505,14 @@ function renderProducts() {
       + '</div></div></div>';
   }).join("");
 
-  document.querySelectorAll(".card, .view-btn").forEach(function(el) {
-    el.addEventListener("click", function(e) {
-      e.stopPropagation();
-      var pid = this.dataset.pid || this.closest(".card").dataset.pid;
-      openProduct(pid);
-    });
-  });
+  // Event delegation - one listener on the grid handles all card/button clicks
+  var grid = document.getElementById("productGrid");
+  grid.onclick = function(e) {
+    var btn = e.target.closest(".view-btn");
+    var card = e.target.closest(".card");
+    var pid = (btn && btn.dataset.pid) || (card && card.dataset.pid);
+    if (pid) openProduct(pid);
+  };
 }
 
 document.addEventListener("DOMContentLoaded", function() {
