@@ -346,6 +346,7 @@ textarea{resize:vertical;min-height:80px}
             <div class="field"><label class="lbl">Product Name</label><input id="nPName" placeholder="e.g. Windows 11 Pro"></div>
             <div class="field"><label class="lbl">Category</label><input id="nPCat" placeholder="e.g. Software"></div>
             <div class="field full"><label class="lbl">Image URL</label><input id="nPImg" placeholder="https://example.com/image.jpg"></div>
+            <div class="field full"><label class="lbl">Docs / Install Guide URL</label><input id="nPDocs" placeholder="https://your-docs.gitbook.io/product-guide"></div>
             <div class="field full"><label class="lbl">Description</label><textarea id="nPDesc" placeholder="Brief product description…"></textarea></div>
           </div>
           <div style="margin:14px 0 8px;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">Variants (add at least one)</div>
@@ -750,6 +751,7 @@ function createProduct() {
   var name = document.getElementById("nPName").value.trim();
   var cat = document.getElementById("nPCat").value.trim();
   var img = document.getElementById("nPImg").value.trim();
+  var docs = document.getElementById("nPDocs").value.trim();
   var desc = document.getElementById("nPDesc").value.trim();
   if (!name) { toast("Product name required"); return; }
   var variants = [];
@@ -761,7 +763,7 @@ function createProduct() {
   if (!variants.length) { toast("Add at least one variant"); return; }
   fetch("/api/admin/products", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: name, description: desc, category: cat, image_url: img }),
+    body: JSON.stringify({ name: name, description: desc, category: cat, image_url: img, docs_url: docs }),
   }).then(function(r){return r.json();}).then(function(prod) {
     var chain = Promise.resolve();
     variants.forEach(function(v, i) {
@@ -778,6 +780,7 @@ function createProduct() {
     document.getElementById("nPName").value = "";
     document.getElementById("nPCat").value = "";
     document.getElementById("nPImg").value = "";
+    document.getElementById("nPDocs").value = "";
     document.getElementById("nPDesc").value = "";
     document.getElementById("variantInputs").innerHTML = '<div class="vnt-input-row" style="display:flex;gap:8px;margin-bottom:8px"><input placeholder="Name e.g. 1 Day" style="flex:2" class="vn"><input placeholder="Price e.g. 4.99" style="flex:1" class="vp" type="number" step="0.01"></div>';
     loadAdminData();
@@ -1071,9 +1074,9 @@ app.get("/api/admin/stats", requireAdmin, (req, res) => {
 });
 
 app.post("/api/admin/products", requireAdmin, (req, res) => {
-  const { name, description, category, image_url } = req.body;
+  const { name, description, category, image_url, docs_url } = req.body;
   if (!name) return res.status(400).json({ error: "name required" });
-  res.json(Products.create({ name, description, category, image_url }));
+  res.json(Products.create({ name, description, category, image_url, docs_url }));
 });
 
 app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {

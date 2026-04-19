@@ -1,7 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 function purchaseSuccessEmbed(order, product) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(0x22c55e)
     .setTitle(`✅ Order Confirmed — ${product.name}`)
     .setDescription(`Thank you for your purchase, <@${order.discord_id}>!`)
@@ -13,6 +13,28 @@ function purchaseSuccessEmbed(order, product) {
     )
     .setFooter({ text: "NexusKeys • Open a ticket if you need support" })
     .setTimestamp();
+
+  // Build buttons row
+  const buttons = [];
+
+  if (product.docs_url) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel("📖 How to Install")
+        .setStyle(ButtonStyle.Link)
+        .setURL(product.docs_url)
+    );
+  }
+
+  buttons.push(
+    new ButtonBuilder()
+      .setLabel("🎫 Open Ticket")
+      .setStyle(ButtonStyle.Link)
+      .setURL(`${process.env.BASE_URL}`)
+  );
+
+  const row = new ActionRowBuilder().addComponents(buttons);
+  return { embeds: [embed], components: [row] };
 }
 
 function purchaseLogEmbed(order, product) {

@@ -38,12 +38,14 @@ async function sendPurchaseLog(order, product) {
   } catch (err) { console.error("Purchase log failed:", err.message); }
 }
 
-async function dmUser(discordId, embeds) {
+async function dmUser(discordId, payload) {
   try {
     const user = await client.users.fetch(discordId);
-    await user.send({ embeds });
+    // payload can be {embeds, components} object or plain embeds array
+    const msg = Array.isArray(payload) ? { embeds: payload } : payload;
+    await user.send(msg);
     return true;
-  } catch (err) { console.error(`DM failed:`, err.message); return false; }
+  } catch (err) { console.error("DM failed:", err.message); return false; }
 }
 
 client.login(process.env.DISCORD_TOKEN);

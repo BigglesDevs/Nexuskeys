@@ -14,6 +14,7 @@ db.exec(`
     description TEXT NOT NULL DEFAULT '',
     category    TEXT NOT NULL DEFAULT 'General',
     image_url   TEXT NOT NULL DEFAULT '',
+    docs_url    TEXT NOT NULL DEFAULT '',
     active      INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -83,14 +84,14 @@ const Products = {
   getAll: () => db.prepare("SELECT * FROM products WHERE active=1 ORDER BY created_at DESC").all(),
   getAllAdmin: () => db.prepare("SELECT * FROM products ORDER BY created_at DESC").all(),
   getById: (id) => db.prepare("SELECT * FROM products WHERE id=?").get(id),
-  create: ({ name, description, category, image_url }) => {
+  create: ({ name, description, category, image_url, docs_url }) => {
     const id = uuidv4();
-    db.prepare("INSERT INTO products (id,name,description,category,image_url) VALUES (?,?,?,?,?)")
-      .run(id, name, description||"", category||"General", image_url||"");
+    db.prepare("INSERT INTO products (id,name,description,category,image_url,docs_url) VALUES (?,?,?,?,?,?)")
+      .run(id, name, description||"", category||"General", image_url||"", docs_url||"");
     return Products.getById(id);
   },
   update: (id, fields) => {
-    const allowed = ["name","description","category","image_url","active"];
+    const allowed = ["name","description","category","image_url","docs_url","active"];
     const sets = Object.keys(fields).filter(k=>allowed.includes(k)).map(k=>`${k}=?`).join(",");
     const vals = Object.keys(fields).filter(k=>allowed.includes(k)).map(k=>fields[k]);
     if (!sets) return Products.getById(id);
