@@ -85,7 +85,7 @@ db.exec(`
 
 const Products = {
   getAll: () => db.prepare("SELECT * FROM products WHERE active=1 ORDER BY created_at DESC").all(),
-  getAllAdmin: () => db.prepare("SELECT * FROM products ORDER BY created_at DESC").all(),
+  getAllAdmin: () => db.prepare("SELECT * FROM products WHERE active=1 ORDER BY created_at DESC").all(),
   getById: (id) => db.prepare("SELECT * FROM products WHERE id=?").get(id),
   create: ({ name, description, category, image_url, docs_url }) => {
     const id = uuidv4();
