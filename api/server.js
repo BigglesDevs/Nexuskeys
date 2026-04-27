@@ -41,6 +41,8 @@ const INDEX_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>NexusKeys</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BigglesDevs/Nexuskeys/5597fd2e97d1619ae6c3ba7e4e39bfa691e0a30c/dashboard/public/assets/photo.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BigglesDevs/Nexuskeys/5597fd2e97d1619ae6c3ba7e4e39bfa691e0a30c/dashboard/public/assets/photo.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -55,7 +57,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:10
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,11,20,.95);border-bottom:1px solid var(--bdr);backdrop-filter:blur(12px)}
 .logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.3px}
-.logo-icon{width:28px;height:28px;background:var(--nx);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.logo-icon{width:32px;height:32px;border-radius:7px;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .nav-links{display:flex;gap:4px}
 .nav-btn{padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--mut);font-family:var(--sans);transition:all .15s}
 .nav-btn:hover,.nav-btn.active{color:var(--txt);background:var(--surf2)}
@@ -246,7 +248,7 @@ textarea{resize:vertical;min-height:80px}
 
 <!-- NAV -->
 <nav>
-  <div class="logo" id="logoBtn"><div class="logo-icon">N</div>NexusKeys</div>
+  <div class="logo" id="logoBtn"><img class="logo-icon" src="https://raw.githubusercontent.com/BigglesDevs/Nexuskeys/5597fd2e97d1619ae6c3ba7e4e39bfa691e0a30c/dashboard/public/assets/photo.png" alt="NexusKeys" style="width:32px;height:32px;object-fit:contain;border-radius:7px">NexusKeys</div>
   <div class="nav-links">
     <button class="nav-btn active" id="nav-store">Store</button>
     <button class="nav-btn" id="nav-orders">My Orders</button>
@@ -687,38 +689,22 @@ function ordersTable(orders) {
 
 function deleteProduct(id, name) {
   if (!confirm('Remove "'+name+'" from the store?')) return;
-  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function(r) {
-    if (!r.ok) { toast("Failed to remove"); return; }
-    toast("Product removed");
+  // Immediately remove from DOM so it disappears instantly
+  var rows = document.querySelectorAll(".p-row");
+  rows.forEach(function(row) {
+    var btn = row.querySelector(".del-prod");
+    if (btn && btn.dataset.pid === id) row.remove();
+  });
+  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function() {
+    toast("✅ Product removed");
+    // Reload fresh data from server
     adminProds = adminProds.filter(function(p) { return p.id !== id; });
-    products = products.filter(function(p) { return p.id !== id; });
-    var pl = document.getElementById("productsList");
-    if (pl) {
-      var html = '<div class="sec-title">All Products</div>';
-      if (adminProds.length === 0) {
-        html += '<div style="color:var(--mut);padding:20px;text-align:center">No products yet</div>';
-      } else {
-        adminProds.forEach(function(p) {
-          html += '<div class="p-row">';
-          html += p.image_url ? '<img class="p-img" src="'+p.image_url+'">' : '<div class="p-img-ph">&#9633;</div>';
-          html += '<div style="flex:1"><div style="font-weight:600;font-size:14px;margin-bottom:4px">'+p.name+' <span style="color:var(--mut);font-size:12px">'+p.category+'</span></div>';
-          (p.variants||[]).forEach(function(v) {
-            html += '<div class="v-row"><span style="flex:1">'+v.name+'</span><span style="font-family:var(--mono);color:var(--nx2);font-weight:700;min-width:55px">$'+Number(v.price).toFixed(2)+'</span><span class="badge '+(v.stock>5?"b-grn":v.stock>0?"b-ylw":"b-red")+'">'+v.stock+' keys</span></div>';
-          });
-          html += '</div><button class="btn btn-danger btn-sm del-prod" data-pid="'+p.id+'" data-name="'+p.name.replace(/"/g,"&quot;")+'">Remove</button></div>';
-        });
-      }
-      pl.innerHTML = html;
-      pl.onclick = function(e) {
-        var btn = e.target.closest(".del-prod");
-        if (btn) deleteProduct(btn.dataset.pid, btn.dataset.name);
-      };
-    }
-    renderProducts();
-    renderCats();
+    loadAdminData();
+    loadProducts();
   });
 }
 
+// ── Dash binding ───────────────────────────────────────────────────────────────
 function bindDash() {
   var sections = ["overview","orders-admin","products-admin","add-product","add-keys"];
   sections.forEach(function(s) {
