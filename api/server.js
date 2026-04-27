@@ -687,8 +687,16 @@ function ordersTable(orders) {
 
 function deleteProduct(id, name) {
   if (!confirm('Remove "'+name+'" from the store?')) return;
+  // Immediately remove from DOM so it disappears instantly
+  var rows = document.querySelectorAll(".p-row");
+  rows.forEach(function(row) {
+    var btn = row.querySelector(".del-prod");
+    if (btn && btn.dataset.pid === id) row.remove();
+  });
   fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function() {
     toast("✅ Product removed");
+    // Reload fresh data from server
+    adminProds = adminProds.filter(function(p) { return p.id !== id; });
     loadAdminData();
     loadProducts();
   });
