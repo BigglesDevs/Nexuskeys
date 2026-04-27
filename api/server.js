@@ -687,19 +687,49 @@ function ordersTable(orders) {
 
 function deleteProduct(id, name) {
   if (!confirm('Remove "'+name+'" from the store?')) return;
-  // Immediately remove from DOM so it disappears instantly
-  var rows = document.querySelectorAll(".p-row");
-  rows.forEach(function(row) {
-    var btn = row.querySelector(".del-prod");
-    if (btn && btn.dataset.pid === id) row.remove();
-  });
-  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function() {
+  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function(r) {
+    if (!r.ok) { toast("❌ Failed to remove"); return; }
     toast("✅ Product removed");
-    // Reload fresh data from server
+    // Filter out deleted product from cache BEFORE re-rendering
     adminProds = adminProds.filter(function(p) { return p.id !== id; });
+    products = products.filter(function(p) { return p.id !== id; });
+    // Re-render immediately from updated cache
+    renderProductsAdmin();
+    renderProducts();
+    renderCats();
+    // Then reload fresh from server in background
     loadAdminData();
     loadProducts();
   });
+}
+
+function renderProductsAdmin() {
+  var el = document.getElementById("productsList");
+  if (!el) return;
+  el.innerHTML = '<div class="sec-title">All Products</div>' +
+    adminProds.map(function(p) {
+      return '<div class="p-row">'
+        + (p.image_url
+          ? '<img class="p-img" src="'+p.image_url+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="p-img-ph" style="display:none">⬡</div>'
+          : '<div class="p-img-ph">⬡</div>')
+        + '<div style="flex:1">'
+        + '<div style="font-weight:600;font-size:14px;margin-bottom:4px">'+p.name+' <span style="color:var(--mut);font-size:12px">'+p.category+'</span></div>'
+        + (p.variants||[]).map(function(v){
+          return '<div class="v-row"><span style="flex:1">'+v.name+'</span>'
+            + '<span style="font-family:var(--mono);color:var(--nx2);font-weight:700;min-width:55px">$'+Number(v.price).toFixed(2)+'</span>'
+            + '<span class="badge '+(v.stock>5?"b-grn":v.stock>0?"b-ylw":"b-red")+'">'+v.stock+' keys</span>'
+            + '</div>';
+        }).join("")
+        + '</div>'
+        + '<button class="btn btn-danger btn-sm del-prod" data-pid="'+p.id+'" data-name="'+p.name.replace(/"/g,"&quot;")+'">Remove</button>'
+        + '</div>';
+    }).join("");
+
+  // Re-bind delete buttons
+  el.onclick = function(e) {
+    var btn = e.target.closest(".del-prod");
+    if (btn) deleteProduct(btn.dataset.pid, btn.dataset.name);
+  };
 }
 
 // ── Dash binding ───────────────────────────────────────────────────────────────
