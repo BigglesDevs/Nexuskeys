@@ -996,13 +996,6 @@ const requireAuth = (req, res, next) => {
   if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
   next();
 };
-// Prevent browser caching on API responses
-app.use("/api", (req, res, next) => {
-  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
-  res.set("Pragma", "no-cache");
-  next();
-});
-
 const requireAdmin = (req, res, next) => {
   if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
   if (!req.session.user.is_admin) return res.status(403).json({ error: "Admin only" });
