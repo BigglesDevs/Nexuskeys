@@ -23,18 +23,19 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || "nexuskeys-secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  },
+secret: process.env.SESSION_SECRET || "nexuskeys-secret",
+resave: false,
+saveUninitialized: false,
+cookie: {
+secure: process.env.NODE_ENV === "production",
+sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+maxAge: 7 * 24 * 60 * 60 * 1000,
+},
 }));
 
 // ── Inline HTML (no static folder needed) ────────────────────────────────────
 const INDEX_HTML = `<!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -53,18 +54,18 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:10
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 
 /* ── NAV ── */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,11,20,.95);border-bottom:1px solid var(--bdr);backdrop-filter:blur(12px)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,11,20,.95);border-bottom:1px solid var(–bdr);backdrop-filter:blur(12px)}
 .logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.3px}
-.logo-icon{width:28px;height:28px;background:var(--nx);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.logo-icon{width:28px;height:28px;background:var(–nx);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
 .nav-links{display:flex;gap:4px}
-.nav-btn{padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--mut);font-family:var(--sans);transition:all .15s}
-.nav-btn:hover,.nav-btn.active{color:var(--txt);background:var(--surf2)}
-.discord-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:#5865f2;border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.nav-btn{padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:none;color:var(–mut);font-family:var(–sans);transition:all .15s}
+.nav-btn:hover,.nav-btn.active{color:var(–txt);background:var(–surf2)}
+.discord-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:#5865f2;border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(–sans);transition:all .15s}
 .discord-btn:hover{background:#4752c4}
-.user-chip{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);font-size:13px;font-weight:600}
+.user-chip{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:8px;background:var(–surf2);border:1px solid var(–bdr2);font-size:13px;font-weight:600}
 .avatar{width:24px;height:24px;border-radius:50%}
-.logout{background:none;border:none;color:var(--mut);cursor:pointer;font-size:14px;padding:2px 4px}
-.logout:hover{color:var(--red)}
+.logout{background:none;border:none;color:var(–mut);cursor:pointer;font-size:14px;padding:2px 4px}
+.logout:hover{color:var(–red)}
 
 /* ── PAGES ── */
 .page{display:none}
@@ -73,46 +74,46 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;ali
 
 /* ── HERO ── */
 .hero{text-align:center;padding:90px 24px 50px;max-width:660px;margin:0 auto}
-.live-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr2);font-size:12px;font-weight:600;color:var(--nx2);margin-bottom:20px;letter-spacing:.5px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite}
+.live-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(–surf2);border:1px solid var(–bdr2);font-size:12px;font-weight:600;color:var(–nx2);margin-bottom:20px;letter-spacing:.5px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(–grn);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .hero h1{font-size:clamp(32px,6vw,58px);font-weight:700;line-height:1.1;letter-spacing:-1.5px;margin-bottom:14px}
-.hero h1 span{color:var(--nx2)}
-.hero p{font-size:15px;color:var(--mut);margin-bottom:26px;line-height:1.6}
+.hero h1 span{color:var(–nx2)}
+.hero p{font-size:15px;color:var(–mut);margin-bottom:26px;line-height:1.6}
 .hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* ── BUTTONS ── */
-.btn{padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s}
-.btn-primary{background:var(--nx);color:#fff}
-.btn-primary:hover{background:var(--nx2);transform:translateY(-1px)}
-.btn-ghost{background:var(--surf2);color:var(--txt);border:1px solid var(--bdr2)}
-.btn-ghost:hover{border-color:var(--nx)}
-.btn-danger{background:#ef444418;color:var(--red);border:1px solid #ef444430}
+.btn{padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(–sans);transition:all .15s}
+.btn-primary{background:var(–nx);color:#fff}
+.btn-primary:hover{background:var(–nx2);transform:translateY(-1px)}
+.btn-ghost{background:var(–surf2);color:var(–txt);border:1px solid var(–bdr2)}
+.btn-ghost:hover{border-color:var(–nx)}
+.btn-danger{background:#ef444418;color:var(–red);border:1px solid #ef444430}
 .btn-danger:hover{background:#ef444428}
 .btn-sm{padding:6px 12px;font-size:12px}
 
 /* ── STATS ── */
-.stats{display:flex;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)}
-.stat{flex:1;text-align:center;padding:18px 12px;border-right:1px solid var(--bdr)}
+.stats{display:flex;border-top:1px solid var(–bdr);border-bottom:1px solid var(–bdr)}
+.stat{flex:1;text-align:center;padding:18px 12px;border-right:1px solid var(–bdr)}
 .stat:last-child{border-right:none}
-.stat-n{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--nx2)}
-.stat-l{font-size:11px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.stat-n{font-size:20px;font-weight:700;font-family:var(–mono);color:var(–nx2)}
+.stat-l{font-size:11px;color:var(–mut);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── TICKER ── */
-.ticker-wrap{overflow:hidden;border-bottom:1px solid var(--bdr);background:var(--surf);padding:8px 0}
+.ticker-wrap{overflow:hidden;border-bottom:1px solid var(–bdr);background:var(–surf);padding:8px 0}
 .ticker{display:flex;gap:40px;animation:tick 25s linear infinite;white-space:nowrap;width:max-content}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tick-item{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
-.tick-dot{width:5px;height:5px;border-radius:50%;background:var(--grn);flex-shrink:0}
+.tick-item{font-size:12px;color:var(–mut);display:flex;align-items:center;gap:6px}
+.tick-dot{width:5px;height:5px;border-radius:50%;background:var(–grn);flex-shrink:0}
 
 /* ── FILTERS ── */
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
-.search{flex:1;min-width:180px;padding:9px 14px;border-radius:9px;background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s}
-.search:focus{border-color:var(--nx)}
-.search::placeholder{color:var(--mut)}
-.cat-btn{padding:7px 13px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--bdr2);background:var(--surf);color:var(--mut);font-family:var(--sans);transition:all .15s}
-.cat-btn:hover{border-color:var(--nx);color:var(--txt)}
-.cat-btn.active{background:var(--nx);border-color:var(--nx);color:#fff}
+.search{flex:1;min-width:180px;padding:9px 14px;border-radius:9px;background:var(–surf);border:1px solid var(–bdr2);color:var(–txt);font-size:14px;font-family:var(–sans);outline:none;transition:border-color .15s}
+.search:focus{border-color:var(–nx)}
+.search::placeholder{color:var(–mut)}
+.cat-btn{padding:7px 13px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(–bdr2);background:var(–surf);color:var(–mut);font-family:var(–sans);transition:all .15s}
+.cat-btn:hover{border-color:var(–nx);color:var(–txt)}
+.cat-btn.active{background:var(–nx);border-color:var(–nx);color:#fff}
 
 /* ── PRODUCT GRID ── */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
@@ -128,123 +129,125 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;ali
 .status.s-out{background:#ef444422;border:1px solid #ef444455;color:#ef4444}
 .card-body{padding:16px;display:flex;flex-direction:column;flex:1}
 .card-name{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
-.card-desc{font-size:13px;color:var(--mut);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1;margin-bottom:12px}
+.card-desc{font-size:13px;color:var(–mut);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1;margin-bottom:12px}
 .card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
 .card-tag{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid #1e2a3a;background:#0d1017;color:#94a3b8}
 .card-foot{display:flex;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-top:12px;border-top:1px solid #1e2a3a}
-.card-price-l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.card-price{font-size:21px;font-weight:800;font-family:var(--mono);color:#ef4444}
-.view-btn{padding:9px 16px;border-radius:8px;background:#1a2030;border:1px solid #2a3550;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s}
-.view-btn:hover{background:var(--nx);border-color:var(--nx)}
+.card-price-l{font-size:10px;color:var(–mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.card-price{font-size:21px;font-weight:800;font-family:var(–mono);color:#ef4444}
+.view-btn{padding:9px 16px;border-radius:8px;background:#1a2030;border:1px solid #2a3550;color:var(–txt);font-size:13px;font-weight:700;cursor:pointer;font-family:var(–sans);transition:all .15s}
+.view-btn:hover{background:var(–nx);border-color:var(–nx)}
 
 /* ── MODAL ── */
 .overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fi .15s}
 @keyframes fi{from{opacity:0}to{opacity:1}}
-.modal{background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;width:100%;max-width:500px;overflow:hidden;animation:su .2s;max-height:90vh;overflow-y:auto}
+.modal{background:var(–surf);border:1px solid var(–bdr2);border-radius:16px;width:100%;max-width:500px;overflow:hidden;animation:su .2s;max-height:90vh;overflow-y:auto}
 @keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .modal-img{width:100%;height:200px;object-fit:cover}
 .modal-img-ph{width:100%;height:200px;background:linear-gradient(135deg,#0d1017,#1a2030);display:flex;align-items:center;justify-content:center;font-size:56px;color:#2a3550}
 .modal-body{padding:22px}
-.modal-cat{font-size:11px;font-weight:700;color:var(--nx2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.modal-cat{font-size:11px;font-weight:700;color:var(–nx2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
 .modal-title{font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
-.modal-desc{font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:18px}
-.vnt-label{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.modal-desc{font-size:13px;color:var(–mut);line-height:1.6;margin-bottom:18px}
+.vnt-label{font-size:11px;font-weight:700;color:var(–mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
 .vnt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
-.vnt-btn{padding:11px;border-radius:10px;border:2px solid var(--bdr2);background:var(--surf2);cursor:pointer;font-family:var(--sans);transition:all .15s;text-align:center}
-.vnt-btn:hover:not(:disabled){border-color:var(--nx)}
-.vnt-btn.picked{border-color:var(--nx);background:#6366f115}
+.vnt-btn{padding:11px;border-radius:10px;border:2px solid var(–bdr2);background:var(–surf2);cursor:pointer;font-family:var(–sans);transition:all .15s;text-align:center}
+.vnt-btn:hover:not(:disabled){border-color:var(–nx)}
+.vnt-btn.picked{border-color:var(–nx);background:#6366f115}
 .vnt-btn:disabled{opacity:.4;cursor:not-allowed}
-.vnt-name{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:3px}
-.vnt-price{font-size:15px;font-weight:700;font-family:var(--mono);color:var(--nx2)}
-.vnt-stock{font-size:11px;color:var(--grn);margin-top:2px}
-.vnt-stock.low{color:var(--ylw)}
-.vnt-stock.none{color:var(--red)}
+.vnt-name{font-size:13px;font-weight:600;color:var(–txt);margin-bottom:3px}
+.vnt-price{font-size:15px;font-weight:700;font-family:var(–mono);color:var(–nx2)}
+.vnt-stock{font-size:11px;color:var(–grn);margin-top:2px}
+.vnt-stock.low{color:var(–ylw)}
+.vnt-stock.none{color:var(–red)}
 .modal-actions{display:flex;gap:10px}
-.buy-btn{flex:1;padding:12px;border-radius:9px;background:var(--nx);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s}
-.buy-btn:hover:not(:disabled){background:var(--nx2)}
+.buy-btn{flex:1;padding:12px;border-radius:9px;background:var(–nx);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(–sans);transition:all .15s}
+.buy-btn:hover:not(:disabled){background:var(–nx2)}
 .buy-btn:disabled{opacity:.4;cursor:not-allowed}
-.close-btn{width:42px;height:42px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
-.close-btn:hover{color:var(--txt)}
+.close-btn{width:42px;height:42px;border-radius:8px;background:var(–surf2);border:1px solid var(–bdr2);color:var(–mut);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(–sans)}
+.close-btn:hover{color:var(–txt)}
 
 /* ── ORDERS ── */
-.order-card{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:18px;margin-bottom:12px}
+.order-card{background:var(–surf);border:1px solid var(–bdr);border-radius:12px;padding:18px;margin-bottom:12px}
 .order-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.order-id{font-family:var(--mono);font-size:13px;color:var(--nx2);font-weight:700}
-.key-box{background:var(--bg);border:1px dashed var(--bdr2);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--nx2);word-break:break-all;margin-top:10px}
+.order-id{font-family:var(–mono);font-size:13px;color:var(–nx2);font-weight:700}
+.key-box{background:var(–bg);border:1px dashed var(–bdr2);border-radius:8px;padding:10px 14px;font-family:var(–mono);font-size:13px;color:var(–nx2);word-break:break-all;margin-top:10px}
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
-.b-grn{background:#22c55e20;color:var(--grn)}
-.b-ylw{background:#f59e0b20;color:var(--ylw)}
-.b-red{background:#ef444420;color:var(--red)}
-.b-nx{background:#6366f120;color:var(--nx2)}
+.b-grn{background:#22c55e20;color:var(–grn)}
+.b-ylw{background:#f59e0b20;color:var(–ylw)}
+.b-red{background:#ef444420;color:var(–red)}
+.b-nx{background:#6366f120;color:var(–nx2)}
 
 /* ── DASHBOARD ── */
 .dash{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 60px);margin-top:60px}
-.sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
-.sb-label{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin:14px 0 6px}
+.sidebar{background:var(–surf);border-right:1px solid var(–bdr);padding:16px 10px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.sb-label{font-size:10px;font-weight:700;color:var(–mut);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin:14px 0 6px}
 .sb-label:first-child{margin-top:0}
-.sb-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--mut);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--sans);transition:all .15s}
-.sb-btn:hover{color:var(--txt);background:var(--surf2)}
-.sb-btn.active{color:var(--txt);background:var(--surf2);border-left:2px solid var(--nx)}
+.sb-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(–mut);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(–sans);transition:all .15s}
+.sb-btn:hover{color:var(–txt);background:var(–surf2)}
+.sb-btn.active{color:var(–txt);background:var(–surf2);border-left:2px solid var(–nx)}
 .dash-content{padding:26px;overflow:auto}
 .page-title{font-size:20px;font-weight:700;margin-bottom:4px}
-.page-sub{color:var(--mut);font-size:13px;margin-bottom:22px}
+.page-sub{color:var(–mut);font-size:13px;margin-bottom:22px}
 .stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
-.sc{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;padding:16px}
-.sc-l{font-size:11px;color:var(--mut);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.sc-n{font-size:22px;font-weight:700;font-family:var(--mono)}
-.tbl-wrap{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;overflow:hidden;margin-bottom:18px}
-.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bdr)}
+.sc{background:var(–surf);border:1px solid var(–bdr);border-radius:11px;padding:16px}
+.sc-l{font-size:11px;color:var(–mut);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.sc-n{font-size:22px;font-weight:700;font-family:var(–mono)}
+.tbl-wrap{background:var(–surf);border:1px solid var(–bdr);border-radius:11px;overflow:hidden;margin-bottom:18px}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(–bdr)}
 .tbl-title{font-size:14px;font-weight:700}
 table{width:100%;border-collapse:collapse}
-thead{background:var(--surf2)}
-th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.5px;text-transform:uppercase}
-td{padding:11px 14px;border-bottom:1px solid var(--bdr);font-size:13px}
+thead{background:var(–surf2)}
+th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:var(–mut);letter-spacing:.5px;text-transform:uppercase}
+td{padding:11px 14px;border-bottom:1px solid var(–bdr);font-size:13px}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.012)}
-.form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:11px;padding:22px;margin-bottom:18px}
+.form-card{background:var(–surf);border:1px solid var(–bdr);border-radius:11px;padding:22px;margin-bottom:18px}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fgrid .full{grid-column:1/-1}
 .field{margin-bottom:0}
-.lbl{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase}
-input,select,textarea{width:100%;padding:9px 12px;border-radius:8px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--txt);font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--nx)}
+.lbl{display:block;font-size:11px;font-weight:600;color:var(–mut);margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:9px 12px;border-radius:8px;background:var(–surf2);border:1px solid var(–bdr2);color:var(–txt);font-size:14px;font-family:var(–sans);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(–nx)}
 textarea{resize:vertical;min-height:80px}
-.p-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--bdr)}
+.p-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(–bdr)}
 .p-row:last-child{border-bottom:none}
-.p-img{width:50px;height:50px;border-radius:8px;object-fit:cover;background:var(--surf2);flex-shrink:0}
-.p-img-ph{width:50px;height:50px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.v-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.p-img{width:50px;height:50px;border-radius:8px;object-fit:cover;background:var(–surf2);flex-shrink:0}
+.p-img-ph{width:50px;height:50px;border-radius:8px;background:var(–surf2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.v-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(–bdr);font-size:13px}
 .v-row:last-child{border-bottom:none}
-.keys-list{background:var(--bg);border:1px solid var(--bdr);border-radius:9px;overflow:hidden;max-height:280px;overflow-y:auto;margin-top:12px}
-.key-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bdr);font-size:12px}
+.keys-list{background:var(–bg);border:1px solid var(–bdr);border-radius:9px;overflow:hidden;max-height:280px;overflow-y:auto;margin-top:12px}
+.key-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(–bdr);font-size:12px}
 .key-row:last-child{border-bottom:none}
-.key-val{flex:1;font-family:var(--mono);color:var(--nx2)}
-.key-date{color:var(--mut);font-size:11px}
-.key-del{background:none;border:none;color:var(--mut);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:13px}
-.key-del:hover{color:var(--red)}
+.key-val{flex:1;font-family:var(–mono);color:var(–nx2)}
+.key-date{color:var(–mut);font-size:11px}
+.key-del{background:none;border:none;color:var(–mut);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:13px}
+.key-del:hover{color:var(–red)}
 
 /* ── MISC ── */
-.empty{text-align:center;padding:50px 20px;color:var(--mut)}
+.empty{text-align:center;padding:50px 20px;color:var(–mut)}
 .empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
 .spin-wrap{display:flex;align-items:center;justify-content:center;padding:50px}
-.spin{width:32px;height:32px;border:3px solid var(--bdr2);border-top-color:var(--nx);border-radius:50%;animation:spin .7s linear infinite}
+.spin{width:32px;height:32px;border:3px solid var(–bdr2);border-top-color:var(–nx);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:22px;right:22px;z-index:300;background:var(--surf);border:1px solid var(--bdr2);border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:su .2s}
+.toast{position:fixed;bottom:22px;right:22px;z-index:300;background:var(–surf);border:1px solid var(–bdr2);border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:su .2s}
 .sec-title{font-size:14px;font-weight:700;margin-bottom:12px}
 
 @media(max-width:768px){
-  .dash{grid-template-columns:1fr}
-  .sidebar{position:static;height:auto;display:flex;overflow-x:auto;padding:8px;gap:3px}
-  .sb-btn{flex-shrink:0}
-  .fgrid{grid-template-columns:1fr}
-  .fgrid .full{grid-column:1}
-  .vnt-grid{grid-template-columns:1fr 1fr}
+.dash{grid-template-columns:1fr}
+.sidebar{position:static;height:auto;display:flex;overflow-x:auto;padding:8px;gap:3px}
+.sb-btn{flex-shrink:0}
+.fgrid{grid-template-columns:1fr}
+.fgrid .full{grid-column:1}
+.vnt-grid{grid-template-columns:1fr 1fr}
 }
 </style>
+
 </head>
 <body>
 
 <!-- NAV -->
+
 <nav>
   <div class="logo" id="logoBtn"><div class="logo-icon">N</div>NexusKeys</div>
   <div class="nav-links">
@@ -256,9 +259,10 @@ textarea{resize:vertical;min-height:80px}
 </nav>
 
 <!-- STORE -->
+
 <div class="page show" id="page-store">
   <div class="hero">
-    <div class="live-badge"><span class="dot"></span>Live — Instant Key Delivery</div>
+    <div class="live-badge"><span class="dot"></span>Live -- Instant Key Delivery</div>
     <h1>Premium Software<br><span>Keys & Licenses</span></h1>
     <p>Instant delivery · Secured by Stripe · Discord verified</p>
     <div class="hero-btns">
@@ -267,7 +271,7 @@ textarea{resize:vertical;min-height:80px}
     </div>
   </div>
   <div class="stats">
-    <div class="stat"><div class="stat-n" id="statP">—</div><div class="stat-l">Products</div></div>
+    <div class="stat"><div class="stat-n" id="statP">--</div><div class="stat-l">Products</div></div>
     <div class="stat"><div class="stat-n">1,240+</div><div class="stat-l">Orders</div></div>
     <div class="stat"><div class="stat-n">$8.4k+</div><div class="stat-l">Revenue</div></div>
     <div class="stat"><div class="stat-n">⚡</div><div class="stat-l">Instant</div></div>
@@ -294,6 +298,7 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <!-- ORDERS -->
+
 <div class="page" id="page-orders">
   <div class="wrap">
     <div class="page-title">My Orders</div>
@@ -303,6 +308,7 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <!-- DASHBOARD -->
+
 <div class="page" id="page-dash">
   <div class="dash">
     <div class="sidebar">
@@ -316,76 +322,80 @@ textarea{resize:vertical;min-height:80px}
     </div>
     <div class="dash-content">
 
-      <div id="ds-overview">
-        <div class="page-title">Overview</div>
-        <div class="page-sub">Store at a glance</div>
-        <div class="stat-cards" id="adminStats"><div class="spin-wrap"><div class="spin"></div></div></div>
-        <div class="tbl-wrap">
-          <div class="tbl-hdr"><div class="tbl-title">Recent Orders</div></div>
-          <div id="ordersPreview"></div>
-        </div>
-      </div>
-
-      <div id="ds-orders-admin" style="display:none">
-        <div class="page-title">All Orders</div>
-        <div class="page-sub">Complete order history</div>
-        <div class="tbl-wrap" id="allOrdersTable"></div>
-      </div>
-
-      <div id="ds-products-admin" style="display:none">
-        <div class="page-title">Products</div>
-        <div class="page-sub">Manage your catalog</div>
-        <div class="form-card" id="productsList"></div>
-      </div>
-
-      <div id="ds-add-product" style="display:none">
-        <div class="page-title">Add Product</div>
-        <div class="page-sub">Create a new product with variants</div>
-        <div class="form-card">
-          <div class="fgrid">
-            <div class="field"><label class="lbl">Product Name</label><input id="nPName" placeholder="e.g. Windows 11 Pro"></div>
-            <div class="field"><label class="lbl">Category</label><input id="nPCat" placeholder="e.g. Software"></div>
-            <div class="field full"><label class="lbl">Image URL</label><input id="nPImg" placeholder="https://example.com/image.jpg"></div>
-            <div class="field full"><label class="lbl">Docs / Install Guide URL</label><input id="nPDocs" placeholder="https://your-docs.gitbook.io/product-guide"></div>
-            <div class="field full"><label class="lbl">Description</label><textarea id="nPDesc" placeholder="Brief product description…"></textarea></div>
-          </div>
-          <div style="margin:14px 0 8px;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">Variants (add at least one)</div>
-          <div id="variantInputs">
-            <div class="vnt-input-row" style="display:flex;gap:8px;margin-bottom:8px">
-              <input placeholder="Name e.g. 1 Day" style="flex:2" class="vn">
-              <input placeholder="Price e.g. 4.99" style="flex:1" class="vp" type="number" step="0.01">
-            </div>
-          </div>
-          <button class="btn btn-ghost btn-sm" id="addVariantRowBtn" style="margin-bottom:14px">+ Add Variant</button><br>
-          <button class="btn btn-primary" id="createProductBtn">Create Product</button>
-        </div>
-      </div>
-
-      <div id="ds-add-keys" style="display:none">
-        <div class="page-title">Add Keys</div>
-        <div class="page-sub">Upload stock — one key per line</div>
-        <div class="form-card">
-          <div class="field" style="margin-bottom:12px"><label class="lbl">Product</label>
-            <select id="keyProdSel"><option value="">Select product…</option></select>
-          </div>
-          <div class="field" style="margin-bottom:12px"><label class="lbl">Variant</label>
-            <select id="keyVntSel"><option value="">Select variant…</option></select>
-          </div>
-          <div id="keysList"></div>
-          <div class="field" style="margin-bottom:12px"><label class="lbl">Add Keys (one per line)</label>
-            <textarea id="keysInput" placeholder="XXXXX-XXXXX&#10;YYYYY-YYYYY" style="min-height:140px;font-family:var(--mono);font-size:13px"></textarea>
-          </div>
-          <button class="btn btn-primary" id="uploadKeysBtn">Upload Keys</button>
-        </div>
-      </div>
-
+```
+  <div id="ds-overview">
+    <div class="page-title">Overview</div>
+    <div class="page-sub">Store at a glance</div>
+    <div class="stat-cards" id="adminStats"><div class="spin-wrap"><div class="spin"></div></div></div>
+    <div class="tbl-wrap">
+      <div class="tbl-hdr"><div class="tbl-title">Recent Orders</div></div>
+      <div id="ordersPreview"></div>
     </div>
+  </div>
+
+  <div id="ds-orders-admin" style="display:none">
+    <div class="page-title">All Orders</div>
+    <div class="page-sub">Complete order history</div>
+    <div class="tbl-wrap" id="allOrdersTable"></div>
+  </div>
+
+  <div id="ds-products-admin" style="display:none">
+    <div class="page-title">Products</div>
+    <div class="page-sub">Manage your catalog</div>
+    <div class="form-card" id="productsList"></div>
+  </div>
+
+  <div id="ds-add-product" style="display:none">
+    <div class="page-title">Add Product</div>
+    <div class="page-sub">Create a new product with variants</div>
+    <div class="form-card">
+      <div class="fgrid">
+        <div class="field"><label class="lbl">Product Name</label><input id="nPName" placeholder="e.g. Windows 11 Pro"></div>
+        <div class="field"><label class="lbl">Category</label><input id="nPCat" placeholder="e.g. Software"></div>
+        <div class="field full"><label class="lbl">Image URL</label><input id="nPImg" placeholder="https://example.com/image.jpg"></div>
+        <div class="field full"><label class="lbl">Docs / Install Guide URL</label><input id="nPDocs" placeholder="https://your-docs.gitbook.io/product-guide"></div>
+        <div class="field full"><label class="lbl">Description</label><textarea id="nPDesc" placeholder="Brief product description…"></textarea></div>
+      </div>
+      <div style="margin:14px 0 8px;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">Variants (add at least one)</div>
+      <div id="variantInputs">
+        <div class="vnt-input-row" style="display:flex;gap:8px;margin-bottom:8px">
+          <input placeholder="Name e.g. 1 Day" style="flex:2" class="vn">
+          <input placeholder="Price e.g. 4.99" style="flex:1" class="vp" type="number" step="0.01">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="addVariantRowBtn" style="margin-bottom:14px">+ Add Variant</button><br>
+      <button class="btn btn-primary" id="createProductBtn">Create Product</button>
+    </div>
+  </div>
+
+  <div id="ds-add-keys" style="display:none">
+    <div class="page-title">Add Keys</div>
+    <div class="page-sub">Upload stock -- one key per line</div>
+    <div class="form-card">
+      <div class="field" style="margin-bottom:12px"><label class="lbl">Product</label>
+        <select id="keyProdSel"><option value="">Select product…</option></select>
+      </div>
+      <div class="field" style="margin-bottom:12px"><label class="lbl">Variant</label>
+        <select id="keyVntSel"><option value="">Select variant…</option></select>
+      </div>
+      <div id="keysList"></div>
+      <div class="field" style="margin-bottom:12px"><label class="lbl">Add Keys (one per line)</label>
+        <textarea id="keysInput" placeholder="XXXXX-XXXXX&#10;YYYYY-YYYYY" style="min-height:140px;font-family:var(--mono);font-size:13px"></textarea>
+      </div>
+      <button class="btn btn-primary" id="uploadKeysBtn">Upload Keys</button>
+    </div>
+  </div>
+
+</div>
+```
+
   </div>
 </div>
 
 <!-- MODAL -->
 
 <!-- MODAL OVERLAY - outside all pages so it overlays everything -->
+
 <div id="overlay" class="overlay" style="display:none"></div>
 <!-- TOAST -->
 <div id="toast" class="toast" style="display:none"></div>
@@ -537,7 +547,7 @@ function openProduct(pid) {
   var vnts = (p.variants||[]).map(function(v) {
     var s = v.stock;
     var sc = s===0?"none":s<=5?"low":"";
-    var st = s===0?"Out of stock":s<=5?"Low — "+s+" left":s+" in stock";
+    var st = s===0?"Out of stock":s<=5?"Low -- "+s+" left":s+" in stock";
     return '<button class="vnt-btn" data-vid="'+v.id+'" data-price="'+v.price+'" data-name="'+v.name+'"'+(s===0?" disabled":"")+'>'
       + '<div class="vnt-name">'+v.name+'</div>'
       + '<div class="vnt-price">$'+Number(v.price).toFixed(2)+'</div>'
@@ -576,7 +586,7 @@ function openProduct(pid) {
       vBtn.classList.add("picked");
       var buyBtn = document.getElementById("modalBuyBtn");
       buyBtn.disabled = false;
-      buyBtn.textContent = "Buy Now — $"+Number(vBtn.dataset.price).toFixed(2);
+      buyBtn.textContent = "Buy Now -- $"+Number(vBtn.dataset.price).toFixed(2);
     }
     var bBtn = e.target.closest("#modalBuyBtn");
     if (bBtn && !bBtn.disabled && selVariantId) {
@@ -621,7 +631,7 @@ function loadOrders() {
         + '<div class="order-hdr"><div><div class="order-id">'+o.id+'</div>'
         + '<div style="color:var(--mut);font-size:12px;margin-top:2px">'+new Date(o.created_at).toLocaleString()+'</div></div>'
         + '<span class="badge '+(o.status==="completed"?"b-grn":"b-ylw")+'">'+o.status+'</span></div>'
-        + '<div style="font-weight:600">'+o.product_name+(o.variant_name?" — "+o.variant_name:"")+'</div>'
+        + '<div style="font-weight:600">'+o.product_name+(o.variant_name?" -- "+o.variant_name:"")+'</div>'
         + '<div style="color:var(--nx2);font-family:var(--mono);font-weight:700;font-size:15px;margin-top:4px">$'+Number(o.amount).toFixed(2)+'</div>'
         + (o.key_value?'<div style="margin-top:8px;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px">License Key</div><div class="key-box">'+o.key_value+'</div>':"")
         + '</div>';
@@ -681,24 +691,47 @@ function ordersTable(orders) {
   if (!orders.length) return '<div class="empty">No orders yet</div>';
   return '<table><thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Variant</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>'
     + orders.map(function(o) {
-      return '<tr><td style="font-family:var(--mono);color:var(--nx2)">'+o.id+'</td><td>'+o.discord_username+'</td><td>'+o.product_name+'</td><td>'+(o.variant_name||"—")+'</td><td style="font-family:var(--mono);font-weight:700">$'+Number(o.amount).toFixed(2)+'</td><td><span class="badge '+(o.status==="completed"?"b-grn":o.status==="failed"?"b-red":"b-ylw")+'">'+o.status+'</span></td><td style="color:var(--mut)">'+new Date(o.created_at).toLocaleDateString()+'</td></tr>';
+      return '<tr><td style="font-family:var(--mono);color:var(--nx2)">'+o.id+'</td><td>'+o.discord_username+'</td><td>'+o.product_name+'</td><td>'+(o.variant_name||"--")+'</td><td style="font-family:var(--mono);font-weight:700">$'+Number(o.amount).toFixed(2)+'</td><td><span class="badge '+(o.status==="completed"?"b-grn":o.status==="failed"?"b-red":"b-ylw")+'">'+o.status+'</span></td><td style="color:var(--mut)">'+new Date(o.created_at).toLocaleDateString()+'</td></tr>';
     }).join("") + '</tbody></table>';
 }
 
 function deleteProduct(id, name) {
   if (!confirm('Remove "'+name+'" from the store?')) return;
-  // Immediately remove from DOM so it disappears instantly
-  var rows = document.querySelectorAll(".p-row");
-  rows.forEach(function(row) {
-    var btn = row.querySelector(".del-prod");
-    if (btn && btn.dataset.pid === id) row.remove();
-  });
-  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function() {
-    toast("✅ Product removed");
-    // Reload fresh data from server
+  fetch("/api/admin/products/"+id, { method: "DELETE" }).then(function(r) {
+    if (!r.ok) { toast("\u274c Failed to remove"); return; }
+    toast("\u2705 Product removed");
+    // Remove from caches
     adminProds = adminProds.filter(function(p) { return p.id !== id; });
-    loadAdminData();
-    loadProducts();
+    products = products.filter(function(p) { return p.id !== id; });
+    // Re-render dashboard list from updated cache - no server refetch
+    var pl = document.getElementById("productsList");
+    if (pl) {
+      pl.innerHTML = '<div class="sec-title">All Products</div>' +
+        (adminProds.length ? adminProds.map(function(p) {
+          return '<div class="p-row">'
+            + (p.image_url
+              ? '<img class="p-img" src="'+p.image_url+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="p-img-ph" style="display:none">\u2b21</div>'
+              : '<div class="p-img-ph">\u2b21</div>')
+            + '<div style="flex:1">'
+            + '<div style="font-weight:600;font-size:14px;margin-bottom:4px">'+p.name+' <span style="color:var(--mut);font-size:12px">'+p.category+'</span></div>'
+            + (p.variants||[]).map(function(v){
+              return '<div class="v-row"><span style="flex:1">'+v.name+'</span>'
+                + '<span style="font-family:var(--mono);color:var(--nx2);font-weight:700;min-width:55px">$'+Number(v.price).toFixed(2)+'</span>'
+                + '<span class="badge '+(v.stock>5?"b-grn":v.stock>0?"b-ylw":"b-red")+'">'+v.stock+' keys</span>'
+                + '</div>';
+            }).join("")
+            + '</div>'
+            + '<button class="btn btn-danger btn-sm del-prod" data-pid="'+p.id+'" data-name="'+p.name.replace(/"/g,"&quot;")+'">Remove</button>'
+            + '</div>';
+        }).join("") : '<div style="color:var(--mut);padding:20px;text-align:center">No products yet</div>');
+      pl.onclick = function(e) {
+        var btn = e.target.closest(".del-prod");
+        if (btn) deleteProduct(btn.dataset.pid, btn.dataset.name);
+      };
+    }
+    // Update storefront
+    renderProducts();
+    renderCats();
   });
 }
 
@@ -743,7 +776,7 @@ function bindDash() {
     (p.variants||[]).forEach(function(v) {
       var opt = document.createElement("option");
       opt.value = v.id;
-      opt.textContent = v.name+" — $"+Number(v.price).toFixed(2)+" ("+v.stock+" keys)";
+      opt.textContent = v.name+" -- $"+Number(v.price).toFixed(2)+" ("+v.stock+" keys)";
       vSel.appendChild(opt);
     });
   });
@@ -834,7 +867,7 @@ function uploadKeys() {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ keys: keys }),
   }).then(function(r){return r.json();}).then(function(data) {
-    toast("✅ Added "+data.added+" keys — "+data.stock+" total");
+    toast("✅ Added "+data.added+" keys -- "+data.stock+" total");
     document.getElementById("keysInput").value = "";
     loadKeysList(vid);
     loadAdminData();
@@ -850,6 +883,7 @@ function toast(msg) {
   setTimeout(function() { t.style.display = "none"; }, 3000);
 }
 </script>
+
 </body>
 </html>
 `;
@@ -858,7 +892,7 @@ const SUCCESS_HTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Order Confirmed — NexusKeys</title>
+<title>Order Confirmed -- NexusKeys</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -921,7 +955,7 @@ function renderOrder(order) {
   html += '</div>';
   html += '<div class="order-box">';
   html += '<div class="row"><span class="row-label">Order ID</span><span class="row-val">' + order.id + '</span></div>';
-  html += '<div class="row"><span class="row-label">Product</span><span class="row-val">' + order.product_name + (order.variant_name ? ' — ' + order.variant_name : '') + '</span></div>';
+  html += '<div class="row"><span class="row-label">Product</span><span class="row-val">' + order.product_name + (order.variant_name ? ' -- ' + order.variant_name : '') + '</span></div>';
   html += '<div class="row"><span class="row-label">Amount Paid</span><span class="row-val">$' + Number(order.amount).toFixed(2) + '</span></div>';
   html += '<div class="row"><span class="row-label">Status</span><span class="row-val green">✓ COMPLETED</span></div>';
   html += '<div class="row"><span class="row-label">Date</span><span class="row-val">' + new Date(order.created_at).toLocaleString() + '</span></div>';
@@ -946,267 +980,274 @@ if (sessionId) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.error) {
-        document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ ' + data.error + ' — check your Discord DMs for your key.</div>';
+        document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ ' + data.error + ' -- check your Discord DMs for your key.</div>';
       } else {
         renderOrder(data);
       }
     })
     .catch(function() {
-      document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ Could not load order — check your Discord DMs for your key.</div>';
+      document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ Could not load order -- check your Discord DMs for your key.</div>';
     });
 } else {
   document.getElementById("orderContent").innerHTML = '<div class="loading" style="color:#f59e0b">⚠ No session found.</div>';
 }
 </script>
+
 </body>
 </html>`;
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
 const requireAuth = (req, res, next) => {
-  if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
-  next();
+if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
+next();
 };
 const requireAdmin = (req, res, next) => {
-  if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
-  if (!req.session.user.is_admin) return res.status(403).json({ error: "Admin only" });
-  next();
+if (!req.session.user) return res.status(401).json({ error: "Not authenticated" });
+if (!req.session.user.is_admin) return res.status(403).json({ error: "Admin only" });
+next();
 };
 
 // ── Discord OAuth ─────────────────────────────────────────────────────────────
 app.get("/auth/discord", (req, res) => {
-  const params = new URLSearchParams({
-    client_id: process.env.DISCORD_CLIENT_ID,
-    redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
-    response_type: "code",
-    scope: "identify email",
-  });
-  res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
+const params = new URLSearchParams({
+client_id: process.env.DISCORD_CLIENT_ID,
+redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
+response_type: "code",
+scope: "identify email",
+});
+res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
 });
 
 app.get("/auth/discord/callback", async (req, res) => {
-  const { code } = req.query;
-  if (!code) return res.redirect("/?error=no_code");
-  try {
-    const tokenRes = await axios.post(
-      "https://discord.com/api/oauth2/token",
-      new URLSearchParams({
-        client_id: process.env.DISCORD_CLIENT_ID,
-        client_secret: process.env.DISCORD_CLIENT_SECRET,
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
-      }),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-    );
-    const { access_token, refresh_token } = tokenRes.data;
-    const userRes = await axios.get("https://discord.com/api/users/@me", {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
-    const d = userRes.data;
-    const user = Users.upsert({
-      discord_id: d.id,
-      username: d.username,
-      avatar: d.avatar
-        ? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png`
-        : `https://cdn.discordapp.com/embed/avatars/0.png`,
-      access_token,
-      refresh_token,
-    });
-    req.session.user = user;
-    req.session.save(() => res.redirect("/"));
-  } catch (err) {
-    console.error("OAuth error:", err.response?.data || err.message);
-    res.redirect("/?error=oauth_failed");
-  }
+const { code } = req.query;
+if (!code) return res.redirect("/?error=no_code");
+try {
+const tokenRes = await axios.post(
+"https://discord.com/api/oauth2/token",
+new URLSearchParams({
+client_id: process.env.DISCORD_CLIENT_ID,
+client_secret: process.env.DISCORD_CLIENT_SECRET,
+grant_type: "authorization_code",
+code,
+redirect_uri: `${process.env.BASE_URL}/auth/discord/callback`,
+}),
+{ headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+);
+const { access_token, refresh_token } = tokenRes.data;
+const userRes = await axios.get("https://discord.com/api/users/@me", {
+headers: { Authorization: `Bearer ${access_token}` },
+});
+const d = userRes.data;
+const user = Users.upsert({
+discord_id: d.id,
+username: d.username,
+avatar: d.avatar
+? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png`
+: `https://cdn.discordapp.com/embed/avatars/0.png`,
+access_token,
+refresh_token,
+});
+req.session.user = user;
+req.session.save(() => res.redirect("/"));
+} catch (err) {
+console.error("OAuth error:", err.response?.data || err.message);
+res.redirect("/?error=oauth_failed");
+}
 });
 
 app.get("/auth/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/");
+req.session.destroy();
+res.redirect("/");
 });
 
 app.get("/api/me", (req, res) => {
-  if (!req.session.user) return res.json(null);
-  const { access_token, refresh_token, ...safe } = req.session.user;
-  res.json(safe);
+if (!req.session.user) return res.json(null);
+const { access_token, refresh_token, …safe } = req.session.user;
+res.json(safe);
 });
 
 // ── Products ──────────────────────────────────────────────────────────────────
 app.get("/api/products", (req, res) => {
-  const products = Products.getAll().map(p => ({
-    ...p,
-    variants: Variants.getByProduct(p.id).map(v => ({ ...v, stock: Keys.stock(v.id) })),
-  }));
-  res.json(products);
+const products = Products.getAll().map(p => ({
+…p,
+variants: Variants.getByProduct(p.id).map(v => ({ …v, stock: Keys.stock(v.id) })),
+}));
+res.json(products);
 });
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
 app.post("/api/checkout", requireAuth, async (req, res) => {
-  const { product_id, variant_id } = req.body;
-  const product = Products.getById(product_id);
-  const variant = Variants.getById(variant_id);
-  if (!product || !variant) return res.status(404).json({ error: "Not found" });
-  if (Keys.stock(variant_id) === 0) return res.status(400).json({ error: "Out of stock" });
+const { product_id, variant_id } = req.body;
+const product = Products.getById(product_id);
+const variant = Variants.getById(variant_id);
+if (!product || !variant) return res.status(404).json({ error: "Not found" });
+if (Keys.stock(variant_id) === 0) return res.status(400).json({ error: "Out of stock" });
 
-  try {
-    const sess = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [{
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: `${product.name} — ${variant.name}`,
-            description: product.description,
-            ...(product.image_url ? { images: [product.image_url] } : {}),
-          },
-          unit_amount: Math.round(variant.price * 100),
-        },
-        quantity: 1,
-      }],
-      mode: "payment",
-      success_url: `${process.env.BASE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.BASE_URL}/`,
-      metadata: {
-        product_id: product.id,
-        variant_id: variant.id,
-        discord_id: req.session.user.discord_id,
-        discord_username: req.session.user.username,
-      },
-    });
+try {
+const sess = await stripe.checkout.sessions.create({
+payment_method_types: ["card"],
+line_items: [{
+price_data: {
+currency: "usd",
+product_data: {
+name: `${product.name} -- ${variant.name}`,
+description: product.description,
+…(product.image_url ? { images: [product.image_url] } : {}),
+},
+unit_amount: Math.round(variant.price * 100),
+},
+quantity: 1,
+}],
+mode: "payment",
+success_url: `${process.env.BASE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+cancel_url: `${process.env.BASE_URL}/`,
+metadata: {
+product_id: product.id,
+variant_id: variant.id,
+discord_id: req.session.user.discord_id,
+discord_username: req.session.user.username,
+},
+});
 
-    Orders.create({
-      discord_id: req.session.user.discord_id,
-      discord_username: req.session.user.username,
-      product_id: product.id,
-      product_name: product.name,
-      variant_id: variant.id,
-      variant_name: variant.name,
-      amount: variant.price,
-      stripe_session_id: sess.id,
-    });
+```
+Orders.create({
+  discord_id: req.session.user.discord_id,
+  discord_username: req.session.user.username,
+  product_id: product.id,
+  product_name: product.name,
+  variant_id: variant.id,
+  variant_name: variant.name,
+  amount: variant.price,
+  stripe_session_id: sess.id,
+});
 
-    res.json({ url: sess.url });
-  } catch (err) {
-    console.error("Stripe error:", err.message);
-    res.status(500).json({ error: "Payment failed" });
-  }
+res.json({ url: sess.url });
+```
+
+} catch (err) {
+console.error("Stripe error:", err.message);
+res.status(500).json({ error: "Payment failed" });
+}
 });
 
 // ── Stripe Webhook ────────────────────────────────────────────────────────────
 async function handleStripeWebhook(req, res) {
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      req.headers["stripe-signature"],
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+let event;
+try {
+event = stripe.webhooks.constructEvent(
+req.body,
+req.headers["stripe-signature"],
+process.env.STRIPE_WEBHOOK_SECRET
+);
+} catch (err) {
+return res.status(400).send(`Webhook Error: ${err.message}`);
+}
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const order = Orders.getBySession(session.id);
-    if (!order || order.status === "completed") return res.json({ received: true });
+if (event.type === "checkout.session.completed") {
+const session = event.data.object;
+const order = Orders.getBySession(session.id);
+if (!order || order.status === "completed") return res.json({ received: true });
 
-    const product = Products.getById(order.product_id);
-    const keyValue = Keys.claimAndDelete(order.variant_id);
+```
+const product = Products.getById(order.product_id);
+const keyValue = Keys.claimAndDelete(order.variant_id);
 
-    if (!keyValue) {
-      Orders.fail(order.id);
-      return res.json({ received: true });
-    }
+if (!keyValue) {
+  Orders.fail(order.id);
+  return res.json({ received: true });
+}
 
-    const completedOrder = Orders.complete(order.id, {
-      stripe_payment_id: session.payment_intent,
-      key_value: keyValue,
-    });
+const completedOrder = Orders.complete(order.id, {
+  stripe_payment_id: session.payment_intent,
+  key_value: keyValue,
+});
 
-    try {
-      const { dmUser, sendPurchaseLog } = require("../bot/bot");
-      await dmUser(order.discord_id, purchaseSuccessEmbed(completedOrder, product));
-      await sendPurchaseLog(completedOrder, product);
-    } catch (err) {
-      console.error("Discord notify failed:", err.message);
-    }
-  }
+try {
+  const { dmUser, sendPurchaseLog } = require("../bot/bot");
+  await dmUser(order.discord_id, purchaseSuccessEmbed(completedOrder, product));
+  await sendPurchaseLog(completedOrder, product);
+} catch (err) {
+  console.error("Discord notify failed:", err.message);
+}
+```
 
-  res.json({ received: true });
+}
+
+res.json({ received: true });
 }
 
 // ── Order by session (for success page) ──────────────────────────────────────
 app.get("/api/order/by-session", requireAuth, (req, res) => {
-  const { session_id } = req.query;
-  if (!session_id) return res.status(400).json({ error: "session_id required" });
-  const order = Orders.getBySession(session_id);
-  if (!order) return res.status(404).json({ error: "Not found" });
-  if (order.discord_id !== req.session.user.discord_id) return res.status(403).json({ error: "Forbidden" });
-  res.json(order);
+const { session_id } = req.query;
+if (!session_id) return res.status(400).json({ error: "session_id required" });
+const order = Orders.getBySession(session_id);
+if (!order) return res.status(404).json({ error: "Not found" });
+if (order.discord_id !== req.session.user.discord_id) return res.status(403).json({ error: "Forbidden" });
+res.json(order);
 });
 
 // ── User orders ───────────────────────────────────────────────────────────────
 app.get("/api/orders/mine", requireAuth, (req, res) => {
-  res.json(Orders.getByUser(req.session.user.discord_id));
+res.json(Orders.getByUser(req.session.user.discord_id));
 });
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 app.get("/api/admin/stats", requireAdmin, (req, res) => {
-  const products = Products.getAllAdmin().map(p => ({
-    ...p,
-    variants: Variants.getByProduct(p.id).map(v => ({ ...v, stock: Keys.stock(v.id) })),
-  }));
-  res.json({ stats: Orders.getStats(), products, recentOrders: Orders.getRecent(20) });
+const products = Products.getAllAdmin().map(p => ({
+…p,
+variants: Variants.getByProduct(p.id).map(v => ({ …v, stock: Keys.stock(v.id) })),
+}));
+res.json({ stats: Orders.getStats(), products, recentOrders: Orders.getRecent(20) });
 });
 
 app.post("/api/admin/products", requireAdmin, (req, res) => {
-  const { name, description, category, image_url, docs_url } = req.body;
-  if (!name) return res.status(400).json({ error: "name required" });
-  res.json(Products.create({ name, description, category, image_url, docs_url }));
+const { name, description, category, image_url, docs_url } = req.body;
+if (!name) return res.status(400).json({ error: "name required" });
+res.json(Products.create({ name, description, category, image_url, docs_url }));
 });
 
 app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
-  Products.delete(req.params.id);
-  res.json({ ok: true });
+Products.delete(req.params.id);
+res.json({ ok: true });
 });
 
 app.post("/api/admin/products/:id/variants", requireAdmin, (req, res) => {
-  const { name, price, sort_order } = req.body;
-  if (!name || price === undefined || price === null || price === "") return res.status(400).json({ error: "name and price required" });
-  res.json(Variants.create({ product_id: req.params.id, name, price, sort_order }));
+const { name, price, sort_order } = req.body;
+if (!name || price === undefined || price === null || price === "") return res.status(400).json({ error: "name and price required" });
+res.json(Variants.create({ product_id: req.params.id, name, price, sort_order }));
 });
 
 app.post("/api/admin/variants/:id/keys", requireAdmin, (req, res) => {
-  const { keys } = req.body;
-  if (!Array.isArray(keys) || !keys.length) return res.status(400).json({ error: "keys array required" });
-  const variant = Variants.getById(req.params.id);
-  if (!variant) return res.status(404).json({ error: "Variant not found" });
-  const added = Keys.addBulk(variant.product_id, variant.id, keys);
-  res.json({ added, stock: Keys.stock(variant.id) });
+const { keys } = req.body;
+if (!Array.isArray(keys) || !keys.length) return res.status(400).json({ error: "keys array required" });
+const variant = Variants.getById(req.params.id);
+if (!variant) return res.status(404).json({ error: "Variant not found" });
+const added = Keys.addBulk(variant.product_id, variant.id, keys);
+res.json({ added, stock: Keys.stock(variant.id) });
 });
 
 app.get("/api/admin/variants/:id/keys", requireAdmin, (req, res) => {
-  res.json(Keys.listByVariant(req.params.id));
+res.json(Keys.listByVariant(req.params.id));
 });
 
 app.delete("/api/admin/keys/:id", requireAdmin, (req, res) => {
-  Keys.deleteById(req.params.id);
-  res.json({ ok: true });
+Keys.deleteById(req.params.id);
+res.json({ ok: true });
 });
 
 app.get("/api/admin/orders", requireAdmin, (req, res) => {
-  res.json(Orders.getRecent(100));
+res.json(Orders.getRecent(100));
 });
 
 // ── Routes → inline HTML ──────────────────────────────────────────────────────
 app.get("/order/success", (req, res) => {
-  res.setHeader("Content-Type", "text/html");
-  res.send(SUCCESS_HTML);
+res.setHeader("Content-Type", "text/html");
+res.send(SUCCESS_HTML);
 });
 
 app.get("*", (req, res) => {
-  res.setHeader("Content-Type", "text/html");
-  res.send(INDEX_HTML);
+res.setHeader("Content-Type", "text/html");
+res.send(INDEX_HTML);
 });
 
 const PORT = process.env.PORT || 3000;
